@@ -95,7 +95,6 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
     Float                 videoKbpsf;
     Int                   imageWidth;
     Int                   imageHeight;
-    Int                   freq;
 
     op->time = -1;
 
@@ -153,7 +152,6 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
 
     UI_updateValue(hUI, UI_Value_Time, tmpString);
 
-    freq = gblGetSamplingFrequency();
 
     imageWidth = gblGetImageWidth();
     imageHeight = gblGetImageHeight();

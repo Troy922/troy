@@ -107,10 +107,13 @@ typedef struct GlobalData {
     Int             quit;                /* Global quit flag */
     Int             frames;              /* Video frame counter */
     Int             videoBytesProcessed; /* Video bytes processed counter */
-    Int             soundBytesProcessed; /* Sound bytes processed counter */
-    Int             samplingFrequency;   /* Sound sampling frequency */
     Int             imageWidth;          /* Width of clip */
     Int             imageHeight;         /* Height of clip */
+    Int             relativeBL;          /* relative length of black dragon*/
+    Float           BL;                  /* length of black dragon*/
+    Float           Tt;                  /* Diffusion angle*/
+    Float           MI;                  /* Mix intensity*/
+    Int             stbl;                /* Stability. 1 is stable, 0 is not stable*/
     pthread_mutex_t mutex;               /* Mutex to protect the global data */
 } GlobalData;
 
@@ -176,42 +179,6 @@ static inline Void gblIncVideoBytesProcessed(Int videoBytesProcessed)
     pthread_mutex_unlock(&gbl.mutex);
 }
 
-static inline Int gblGetAndResetSoundBytesProcessed(void)
-{
-    Int soundBytesProcessed;
-
-    pthread_mutex_lock(&gbl.mutex);
-    soundBytesProcessed = gbl.soundBytesProcessed;
-    gbl.soundBytesProcessed = 0;
-    pthread_mutex_unlock(&gbl.mutex);
-
-    return soundBytesProcessed;
-}
-
-static inline Void gblIncSoundBytesProcessed(Int soundBytesProcessed)
-{
-    pthread_mutex_lock(&gbl.mutex);
-    gbl.soundBytesProcessed += soundBytesProcessed;
-    pthread_mutex_unlock(&gbl.mutex);
-}
-
-static inline Int gblGetSamplingFrequency(void)
-{
-    Int samplingFrequency;
-
-    pthread_mutex_lock(&gbl.mutex);
-    samplingFrequency = gbl.samplingFrequency;
-    pthread_mutex_unlock(&gbl.mutex);
-
-    return samplingFrequency;
-}
-
-static inline Void gblSetSamplingFrequency(Int samplingFrequency)
-{
-    pthread_mutex_lock(&gbl.mutex);
-    gbl.samplingFrequency = samplingFrequency;
-    pthread_mutex_unlock(&gbl.mutex);
-}
 
 static inline Int gblGetImageWidth(void)
 {
