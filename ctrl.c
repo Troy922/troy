@@ -91,15 +91,11 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
     Int                   armLoad;
     Int                   fps;
     Int                   videoKbps;
-    Int                   soundKbps;
     Float                 fpsf;
     Float                 videoKbpsf;
-    Float                 soundKbpsf;
     Int                   imageWidth;
     Int                   imageHeight;
     Int                   freq;
-    Int                   khz;
-    Int                   decimal;
 
     op->time = -1;
 
@@ -138,9 +134,6 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
     videoKbpsf   = gblGetAndResetVideoBytesProcessed() * 8.0 / deltaTime;
     videoKbps    = videoKbpsf + 0.5;
 
-    /* Calculate the audio or speech bit rate */
-    soundKbpsf   = gblGetAndResetSoundBytesProcessed() * 8.0 / deltaTime;
-    soundKbps    = soundKbpsf + 0.5;
 
     /* Get the local ARM cpu load */
     if (Cpu_getLoad(hCpu, &armLoad) < 0) {
@@ -154,7 +147,7 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
     }
 
     /* Update the UI */
-    sprintf(tmpString, "%.2d:%.2d:%.2d", timePassed->tm_hour,
+    sprintf(tmpString, "%.2d:%.2d:%.2d\n", timePassed->tm_hour,
                                          timePassed->tm_min,
                                          timePassed->tm_sec);
 
@@ -162,27 +155,13 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
 
     freq = gblGetSamplingFrequency();
 
-    if (freq != op->samplingFrequency) {
-        khz = freq / 1000;
-        decimal = (freq % 1000) / 100; /* Only save one decimal */
-
-        if (decimal) {
-            sprintf(tmpString, "%d.%d KHz samp rate", khz, decimal);
-        }
-        else {
-            sprintf(tmpString, "%d KHz samp rate", khz);
-        }
-
-        UI_updateValue(hUI, UI_Value_SoundFrequency, tmpString);
-    }
-
     imageWidth = gblGetImageWidth();
     imageHeight = gblGetImageHeight();
 
     if (imageWidth != op->imageWidth ||
         imageHeight != op->imageHeight) {
 
-        sprintf(tmpString, "%dx%d", imageWidth, imageHeight);
+        sprintf(tmpString, "%dx%d\n", imageWidth, imageHeight);
 
         UI_updateValue(hUI, UI_Value_ImageResolution, tmpString);
 
@@ -190,17 +169,14 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
         op->imageHeight = imageHeight;
     } 
 
-    sprintf(tmpString, "%d%%", armLoad);
+    sprintf(tmpString, "%d%%\n", armLoad);
     UI_updateValue(hUI, UI_Value_ArmLoad, tmpString);
 
-    sprintf(tmpString, "%d fps", fps);
+    sprintf(tmpString, "%d fps\n", fps);
     UI_updateValue(hUI, UI_Value_Fps, tmpString);
 
-    sprintf(tmpString, "%d kbps", videoKbps);
+    sprintf(tmpString, "%d kbps\n", videoKbps);
     UI_updateValue(hUI, UI_Value_VideoKbps, tmpString);
-
-    sprintf(tmpString, "%d kbps", soundKbps);
-    UI_updateValue(hUI, UI_Value_SoundKbps, tmpString);
 
     UI_update(hUI);
 }

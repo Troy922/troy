@@ -65,16 +65,11 @@ typedef enum {
 
 typedef enum {
     UI_Value_ArmLoad = 0,
+    UI_Value_Time,
     UI_Value_Fps,
     UI_Value_VideoKbps,
-    UI_Value_SoundKbps,
-    UI_Value_Time,
-    UI_Value_DemoName,
     UI_Value_DisplayType,
-    UI_Value_VideoCodec,
     UI_Value_ImageResolution,
-    UI_Value_SoundCodec,
-    UI_Value_SoundFrequency,
     UI_Num_Values
 } UI_Value;
 

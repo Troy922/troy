@@ -80,17 +80,12 @@ typedef struct UI_String_Object {
 } UI_String_Object;
 
 static UI_String_Object stringAttrs[UI_Num_Values] = {
-    { UI_Row_1,  FALSE, "ARM Load:"         }, /* ARM load */
+    { UI_Row_1,  FALSE, " ARM Load:"         }, /* ARM load */
+    { UI_Row_5,  FALSE, "Time:"             }, /* Time */
     { UI_Row_2,  FALSE, "Video fps:"        }, /* Video FPS */
     { UI_Row_3,  FALSE, "Video bit rate:"   }, /* Video bitrate */
-    { UI_Row_4,  FALSE, "Sound bit rate:"   }, /* Sound bitrate */
-    { UI_Row_5,  FALSE, "Time:"             }, /* Time */
-    { UI_Row_7,  FALSE, "Demo:"             }, /* Demo name */
     { UI_Row_8,  FALSE, "Display:"          }, /* Display type */
-    { UI_Row_9,  FALSE, "Video Codec:"      }, /* Video Codec */
     { UI_Row_10, FALSE, "Resolution:"       }, /* Image resolution */
-    { UI_Row_11, FALSE, "Sound Codec:"      }, /* Sound codec */
-    { UI_Row_12, FALSE, "Sampling Freq:"    }, /* Sound sampling frequency */
 };
 
 typedef struct UI_ConfigString {
@@ -134,31 +129,16 @@ static Void drawValue(UI_Handle hUI, UI_Value type)
         case UI_Value_VideoKbps:
             fputc(3, hUI->fpStatus);
             break;
-        case UI_Value_SoundKbps:
-            fputc(4, hUI->fpStatus);
-            break;
         case UI_Value_Time:
             fputc(6, hUI->fpStatus);
             break;
-        case UI_Value_DemoName:
-            fputc(7, hUI->fpStatus);
-            break;
-        case UI_Value_DisplayType:
+              case UI_Value_DisplayType:
             fputc(8, hUI->fpStatus);
-            break;
-        case UI_Value_VideoCodec:
-            fputc(9, hUI->fpStatus);
             break;
         case UI_Value_ImageResolution:
             fputc(10, hUI->fpStatus);
             break;
-        case UI_Value_SoundCodec:
-            fputc(11, hUI->fpStatus);
-            break;
-        case UI_Value_SoundFrequency:
-            fputc(12, hUI->fpStatus);
-            break;
-        default:
+          default:
             printf("Bad UI item value\n");
             return;
     }
@@ -475,7 +455,7 @@ Void UI_update(UI_Handle hUI)
     }
 
     if (!hUI->osd) {
-        printf("\n\n");
+        printf("\n");
     }
 }
 
