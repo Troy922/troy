@@ -72,6 +72,31 @@
  * Note: This function uses x, y parameters to calculate the offset for the
  * buffers.
  ******************************************************************************/
+/* Void drawline(Buffer_Handle hBuf) */
+/* { */
+        /* Int8  *yPtr     = Buffer_getUserPtr(hBuf); */
+        /* Int32  ySize    = Buffer_getSize(hBuf) * 2 / 3; */
+        /* Int8  *cbcrPtr  = yPtr + ySize; */
+        /* Int    bpp = ColorSpace_getBpp(ColorSpace_YUV420PSEMI); */
+        /* Int    y; */
+        /* Int    position1,position2; */
+        /* BufferGfx_Dimensions dim; */
+
+        /* BufferGfx_getDimensions(hBuf, &dim); */
+        /* position1 = dim.height / 2 * dim.lineLength; */
+        /* position2 = dim.height/2 * ( dim.lineLength / 2); */
+        /* yPtr += dim.y * dim.lineLength + dim.x * bpp / 8 + position1; */
+        /* for (y = 0; y < 20; y++) { */
+            /* memset(yPtr, 0x0, dim.width * bpp / 8); */
+            /* yPtr += dim.lineLength; */
+        /* } */
+
+        /* cbcrPtr += dim.y * dim.lineLength / 2 + dim.x * bpp / 8 + position2; */
+        /* for (y = 0; y < 20 / 2; y++) { */
+            /* memset(cbcrPtr, 0x10, dim.width * bpp / 8); */
+            /* cbcrPtr += dim.lineLength; */
+        /* } */
+/* } */
 
 Void CapBuf_blackFill(Buffer_Handle hBuf)
 {
@@ -220,6 +245,7 @@ Void *captureThrFxn(Void *arg)
         * capture and video buffers to perform zero copy encoding.
         */
         envp->imageWidth  = Dmai_roundUp(envp->imageWidth,32);
+        /* envp->imageWidth = envp->imageWidth; */
         capDim.x          = 0;
         capDim.y          = 0;
         capDim.height     = envp->imageHeight;
@@ -350,7 +376,7 @@ Void *captureThrFxn(Void *arg)
         }
 
        /* Fill with black the buffer */
-       /* CapBuf_blackFill(hBuf); */
+       CapBuf_blackFill(hBuf);
 
         /* Send buffer to video thread for encoding */
         if (Fifo_put(envp->hOutFifo, hBuf) < 0) {
@@ -376,6 +402,10 @@ Void *captureThrFxn(Void *arg)
             ERR("Failed to get display buffer\n");
             cleanup(THREAD_FAILURE);
         }
+        
+        /* drawline(hCapBuf); */
+
+
         /* Send buffer to video thread for encoding */
         if (Fifo_put(envp->hOutFifo, hCapBuf) < 0) {
             ERR("Failed to send buffer to display thread\n");
