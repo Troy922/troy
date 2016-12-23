@@ -78,13 +78,9 @@
 #define CAPTURETHREADCREATED    0x40
 #define WRITERTHREADCREATED     0x80
 #define VIDEOTHREADCREATED      0x100
-#define SPEECHTHREADCREATED     0x200
-#define AUDIOTHREADCREATED      0x400
 
 /* Thread priorities */
-#define SPEECH_THREAD_PRIORITY  sched_get_priority_max(SCHED_FIFO) - 2
 #define VIDEO_THREAD_PRIORITY   sched_get_priority_max(SCHED_FIFO) - 1
-#define AUDIO_THREAD_PRIORITY   sched_get_priority_max(SCHED_FIFO) - 2
 
 /* Add argument number x of string y */
 #define addArg(x, y)                     \
@@ -96,22 +92,12 @@
 typedef struct Args {
     VideoStd_Type  videoStd;
     Char          *videoStdString;
-    Sound_Input    soundInput;
     Capture_Input  videoInput;
-    Char          *speechFile;
-    Char          *audioFile;
     Char          *videoFile;
-    Codec         *speechEncoder;
-    Codec         *videoEncoder;
-    Codec         *audioEncoder;
     Int32          imageWidth;
     Int32          imageHeight;
     Int            videoBitRate;
     Char          *videoBitRateString;
-    Int            soundBitRate;
-    Char          *soundBitRateString;
-    Int            sampleRate;
-    Char          *sampleRateString;
     Int            keyboard;
     Int            time;
     Int            osd;
@@ -120,36 +106,11 @@ typedef struct Args {
 } Args;
 
 #define DEFAULT_ARGS \
-    { VideoStd_720P_60, "720P 60Hz", Sound_Input_MIC, Capture_Input_COUNT, \
-      NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, -1, NULL, 96000, NULL, \
-      16000, NULL, FALSE, FOREVER, FALSE, FALSE, FALSE }
+    { VideoStd_720P_60, "720P 60Hz",  Capture_Input_COUNT, \
+       NULL, 0, 0, -1, NULL, FALSE, FOREVER, FALSE, FALSE, FALSE }   
 
 /* Global variable declarations for this application */
 GlobalData gbl = GBL_DATA_INIT;
-
-/******************************************************************************
- * getCodec
- ******************************************************************************/
-static Codec *getCodec(Char *extension, Codec *codecs)
-{
-    Codec *codec = NULL;
-    Int i, j;
-
-    i = 0;
-    while (codecs[i].codecName) {
-        j = 0;
-        while (codecs[i].fileExtensions[j]) {
-            if (strcmp(extension, codecs[i].fileExtensions[j]) == 0) {
-                codec = &codecs[i];
-            }
-            j++;
-        }
-        i++;
-    }
-
-    return codec;
-}
-
 /******************************************************************************
  * usage
  ******************************************************************************/
@@ -157,16 +118,12 @@ static void usage(void)
 {
     fprintf(stderr, "Usage: encode [options]\n\n"
       "Options:\n"
-      "-s | --speechfile       Speech file to record to\n"
-      "-a | --audiofile        Audio file to play\n"
       "-v | --videofile        Video file to record to\n"
       "-y | --display_standard Video standard to use for display (see below).\n"
       "                        Same video standard is used at input.\n"
       "-r | --resolution       Video resolution ('width'x'height')\n"
       "                        [video standard default]\n"
       "-b | --videobitrate     Bit rate to encode video at [variable]\n"
-      "-p | --soundbitrate     Bit rate to encode audio at [96000]\n"
-      "-u | --samplerate       Sample rate to encode audio at [16000]\n"
       "-w | --preview_disable  Disable preview [preview enabled]\n"
       "-f | --write_disable    Disable recording of encoded file [enabled]\n"
       "-I | --video_input      Video input source [video standard default]\n"
@@ -197,18 +154,13 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
 {
     const Char shortOptions[] = "s:a:v:y:r:b:p:u:wfI:lkt:oh";
     const struct option longOptions[] = {
-        {"speechfile",       required_argument, NULL, 's'},
-        {"audiofile",        required_argument, NULL, 'a'},
         {"videofile",        required_argument, NULL, 'v'},
         {"display_standard", required_argument, NULL, 'y'},
         {"resolution",       required_argument, NULL, 'r'},
         {"videobitrate",     required_argument, NULL, 'b'},
-        {"soundbitrate",     required_argument, NULL, 'p'},
-        {"samplerate",       required_argument, NULL, 'u'},
         {"preview_disable",  no_argument,       NULL, 'w'},
         {"write_disable",    no_argument,       NULL, 'f'},
         {"video_input",      required_argument, NULL, 'I'},
-        {"linein",           no_argument,       NULL, 'l'},
         {"keyboard",         no_argument,       NULL, 'k'},
         {"time",             required_argument, NULL, 't'},
         {"osd",              no_argument,       NULL, 'o'},
@@ -231,40 +183,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
             case 0:
                 break;
             
-            case 'a':
-                extension = rindex(optarg, '.');
-                argsp->audioEncoder =
-                    getCodec(extension, engine->audioEncoders);
-
-                if (!argsp->audioEncoder) {
-                    fprintf(stderr, "Unknown audio file extension: %s\n",
-                            extension);     
-                    exit(EXIT_FAILURE);
-                }
-                argsp->audioFile = optarg;
-
-                break;
-
-            case 's':
-                extension = rindex(optarg, '.');
-                if (extension == NULL) {
-                    fprintf(stderr, "Speech file without extension: %s\n",
-                            optarg);
-                    exit(EXIT_FAILURE);
-                }
-
-                argsp->speechEncoder =
-                    getCodec(extension, engine->speechEncoders);
-
-                if (!argsp->speechEncoder) {
-                    fprintf(stderr, "Unknown speech file extension: %s\n",
-                            extension);
-                    exit(EXIT_FAILURE);
-                }
-                argsp->speechFile = optarg;
-
-                break;
-
             case 'v':
                 extension = rindex(optarg, '.');
                 if (extension == NULL) {
@@ -273,14 +191,7 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
                     exit(EXIT_FAILURE);
                 }
 
-                argsp->videoEncoder =
-                    getCodec(extension, engine->videoEncoders);
 
-                if (!argsp->videoEncoder) {
-                    fprintf(stderr, "Unknown video file extension: %s\n",
-                            extension);
-                    exit(EXIT_FAILURE);
-                }
                 argsp->videoFile = optarg;
 
                 break;
@@ -363,20 +274,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
                 argsp->videoBitRateString = optarg;
                 break;
 
-            case 'p':
-                argsp->soundBitRate = atoi(optarg);
-                argsp->soundBitRateString = optarg;
-                break;
-
-            case 'u':
-                argsp->sampleRate = atoi(optarg);
-                argsp->sampleRateString = optarg;
-                break;
-
-            case 'l':
-                argsp->soundInput = Sound_Input_LINE;
-                break;
-
             case 'k':
                 argsp->keyboard = TRUE;
                 break;
@@ -440,8 +337,7 @@ static Int validateArgs(Args *argsp)
     Bool failed = FALSE;
 
     /* Need at least one file to encode and only one sound file */
-    if ((!argsp->videoFile && !(argsp->audioFile || argsp->speechFile)) ||
-        (argsp->audioFile && argsp->speechFile)) {
+    if (!argsp->videoFile) {
         usage();
         return FAILURE;
     }
@@ -504,36 +400,18 @@ static Int launchInterface(Args * argsp)
     addArg(i, "-d");
     addArg(i, "Encode");
 
-    if (argsp->speechFile) {
-        addArg(i, "-s");
-        addArg(i, argsp->speechFile);
-    }
-
+   
     if (argsp->videoFile) {
         addArg(i, "-v");
         addArg(i, argsp->videoFile);
     }
 
-    if (argsp->audioFile) {
-        addArg(i, "-a");
-        addArg(i, argsp->audioFile);
-    }
-
+  
     if (argsp->videoBitRateString) {
         addArg(i, "-b");
         addArg(i, argsp->videoBitRateString);
     }
-
-    if (argsp->soundBitRateString) {
-        addArg(i, "-p");
-        addArg(i, argsp->soundBitRateString);
-    }
-
-    if (argsp->sampleRateString) {
-        addArg(i, "-u");
-        addArg(i, argsp->sampleRateString);
-    }
-
+  
     if (argsp->previewDisabled) {
         addArg(i, "-w");
     }
@@ -632,7 +510,6 @@ static Int getConfigFromInterface(Args * argsp, UI_Handle hUI, Bool * stopped)
                      * If string is empty, cancel video file option selected 
                      * on command line. 
                      */
-                    argsp->videoEncoder = NULL;
                     argsp->videoFile = NULL;
                     break;
                 }
@@ -643,14 +520,7 @@ static Int getConfigFromInterface(Args * argsp, UI_Handle hUI, Bool * stopped)
                     exit(EXIT_FAILURE);
                 }
 
-                argsp->videoEncoder =
-                    getCodec(extension, engine->videoEncoders);
 
-                if (!argsp->videoEncoder) {
-                    fprintf(stderr, "Unknown video file extension: %s\n",
-                            extension);
-                    exit(EXIT_FAILURE);
-                }
                 argsp->videoFile = cfgString;
 
                 break;
@@ -909,9 +779,6 @@ Int main(Int argc, Char *argv[])
         videoEnv.hCaptureInFifo     = captureEnv.hInFifo;
         videoEnv.hWriterOutFifo     = writerEnv.hOutFifo;
         videoEnv.hWriterInFifo      = writerEnv.hInFifo;
-        videoEnv.videoEncoder       = args.videoEncoder->codecName;
-        videoEnv.params             = args.videoEncoder->params;
-        videoEnv.dynParams          = args.videoEncoder->dynParams;
         videoEnv.videoBitRate       = args.videoBitRate;
         videoEnv.imageWidth         = captureEnv.imageWidth;
         videoEnv.imageHeight        = captureEnv.imageHeight;

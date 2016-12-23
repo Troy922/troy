@@ -245,7 +245,6 @@ Void *captureThrFxn(Void *arg)
         * capture and video buffers to perform zero copy encoding.
         */
         envp->imageWidth  = Dmai_roundUp(envp->imageWidth,32);
-        /* envp->imageWidth = envp->imageWidth; */
         capDim.x          = 0;
         capDim.y          = 0;
         capDim.height     = envp->imageHeight;

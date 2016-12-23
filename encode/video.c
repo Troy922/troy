@@ -51,6 +51,7 @@
 
 #include "video.h"
 #include "../demo.h"
+/* #include "process.h" */
 
 #ifndef YUV_420SP
 #define YUV_420SP 256
@@ -59,31 +60,33 @@
 /* Number of buffers in the pipe to the capture thread */
 /* Note: It needs to match capture.c pipe size */
 #define VIDEO_PIPE_SIZE           4 
-Void drawline(Buffer_Handle hBuf)
-{
-        Int8  *yPtr     = Buffer_getUserPtr(hBuf);
-        Int32  ySize    = Buffer_getSize(hBuf) * 2 / 3;
-        Int8  *cbcrPtr  = yPtr + ySize;
-        Int    bpp = ColorSpace_getBpp(ColorSpace_YUV420PSEMI);
-        Int    y;
-        Int    position1,position2;
-        BufferGfx_Dimensions dim;
 
-        BufferGfx_getDimensions(hBuf, &dim);
-        position1 = dim.height / 2 * dim.lineLength;
-        position2 = dim.height/2 * ( dim.lineLength / 2);
-        yPtr += dim.y * dim.lineLength + dim.x * bpp / 8 + position1;
-        for (y = 0; y < 20; y++) {
-            memset(yPtr, 0x0, dim.width * bpp / 8);
-            yPtr += dim.lineLength;
-        }
+/* Void drawline(Buffer_Handle hBuf) */
+/* { */
+        /* Int8  *yPtr     = Buffer_getUserPtr(hBuf); */
+        /* Int32  ySize    = Buffer_getSize(hBuf) * 2 / 3; */
+        /* Int8  *cbcrPtr  = yPtr + ySize; */
+        /* Int    bpp = ColorSpace_getBpp(ColorSpace_YUV420PSEMI); */
+        /* Int    y; */
+        /* Int    position1,position2; */
+        /* BufferGfx_Dimensions dim; */
 
-        cbcrPtr += dim.y * dim.lineLength / 2 + dim.x * bpp / 8 + position2;
-        for (y = 0; y < 20 / 2; y++) {
-            memset(cbcrPtr, 0x40, dim.width * bpp / 8);
-            cbcrPtr += dim.lineLength;
-        }
-}
+        /* BufferGfx_getDimensions(hBuf, &dim); */
+        /* position1 = dim.height / 2 * dim.lineLength; */
+        /* position2 = dim.height/2 * ( dim.lineLength / 2); */
+        /* yPtr += dim.y * dim.lineLength + dim.x * bpp / 8 + position1; */
+        /* for (y = 0; y < 20; y++) { */
+            /* memset(yPtr, 0x0, dim.width * bpp / 8); */
+            /* yPtr += dim.lineLength; */
+        /* } */
+
+        /* cbcrPtr += dim.y * dim.lineLength / 2 + dim.x * bpp / 8 + position2; */
+        /* for (y = 0; y < 20 / 2; y++) { */
+            /* memset(cbcrPtr, 0x40, dim.width * bpp / 8); */
+            /* cbcrPtr += dim.lineLength; */
+        /* } */
+
+/* } */
 
 
 /******************************************************************************
@@ -100,7 +103,6 @@ Void *videoThrFxn(Void *arg)
     Int                     fifoRet;
     Int                     bufIdx;
     ColorSpace_Type         colorSpace = ColorSpace_YUV420PSEMI;
-    BufferGfx_Dimensions    dim;
     Int32                   bufSize;
 
 
@@ -182,15 +184,6 @@ Void *videoThrFxn(Void *arg)
         }
 
 /*         [> Make sure the whole buffer is used for input <] */
-        BufferGfx_resetDimensions(hCapBuf);
-
-        /* [> Ensure that the video buffer has dimensions accepted by codec <] */
-        BufferGfx_getDimensions(hCapBuf, &dim);
-        dim.height = Dmai_roundUp(dim.height, CODECHEIGHTALIGN);
-        BufferGfx_setDimensions(hCapBuf, &dim);
-
-
-        /* [> Reset the dimensions to what they were originally <] */
         BufferGfx_resetDimensions(hCapBuf);
 
         /* drawline(hCapBuf); */
