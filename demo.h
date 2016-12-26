@@ -216,6 +216,100 @@ static inline Void gblSetImageHeight(Int imageHeight)
     pthread_mutex_unlock(&gbl.mutex);
 }
 
+static inline Void gblSetrelativeBL(Int rebl)
+{
+    pthread_mutex_lock(&gbl.mutex);
+    gbl.relativeBL = rebl;
+    pthread_mutex_unlock(&gbl.mutex);
+}
+
+static inline Int gblGetrelativeBL(Void)
+{
+    Int rebl;
+    pthread_mutex_lock(&gbl.mutex);
+    rebl=gbl.relativeBL;
+    pthread_mutex_unlock(&gbl.mutex);
+    return rebl;
+
+}
+
+static inline Void gblSetBL(Float bl)
+{
+    pthread_mutex_lock(&gbl.mutex);
+    gbl.BL = bl;
+    pthread_mutex_unlock(&gbl.mutex);
+}
+
+static inline Float gblGetBL(Void)
+{
+    Float bl;
+    pthread_mutex_lock(&gbl.mutex);
+    bl=gbl.BL;
+    pthread_mutex_unlock(&gbl.mutex);
+    return bl;
+
+}
+
+static inline Void gblSetTt(Float tt)
+{
+    pthread_mutex_lock(&gbl.mutex);
+    gbl.Tt = tt;
+    pthread_mutex_unlock(&gbl.mutex);
+}
+
+static inline Float gblGetTt(Void)
+{
+    Float tt;
+    pthread_mutex_lock(&gbl.mutex);
+    tt=gbl.Tt;
+    pthread_mutex_unlock(&gbl.mutex);
+    return tt;
+}
+
+static inline Void gblSetMI(Float mi)
+{
+    pthread_mutex_lock(&gbl.mutex);
+    gbl.MI = mi;
+    pthread_mutex_unlock(&gbl.mutex);
+}
+
+static inline Float gblGetMI(Void)
+{
+    Float mi;
+    pthread_mutex_lock(&gbl.mutex);
+    mi = gbl.MI;
+    pthread_mutex_unlock(&gbl.mutex);
+    return mi;
+}
+
+static inline Void gblSetstbl(Int stbl)
+{
+    pthread_mutex_lock(&gbl.mutex);
+    gbl.stbl = stbl;
+    pthread_mutex_unlock(&gbl.mutex);
+}
+
+static inline Int gblGetstbl(Void)
+{
+    Int stbl;
+    pthread_mutex_lock(&gbl.mutex);
+    stbl = gbl.stbl;
+    pthread_mutex_unlock(&gbl.mutex);
+    return stbl;
+}
+
+
+static inline void gblSetParams(Int relativeBL, Float BL, Float Tt, Float MI, Int stbl)
+{
+    pthread_mutex_lock(&gbl.mutex);
+    gbl.stbl = stbl;
+    gbl.relativeBL = relativeBL;
+    gbl.BL = BL;
+    gbl.Tt = Tt;
+    gbl.MI = MI;
+    pthread_mutex_unlock(&gbl.mutex);
+
+}
 /* Cleans up cleanly after a failure */
 #define cleanup(x)                                  \
     status = (x);                                   \

@@ -44,7 +44,11 @@
 #include <ti/sdo/dmai/Fifo.h>
 #include <ti/sdo/dmai/Pause.h>
 #include <ti/sdo/dmai/Rendezvous.h>
-
+#define TAN_MAP_RES         0.003921569
+#define TAN_MAP_SIZE        256
+#define PIII                3.14159
+#define TWOPI               6.2831853
+#define PIII_HALF           1.57079
 /* Environment passed when creating the thread */
 typedef struct VideoEnv {
     Rendezvous_Handle hRendezvousInit;
@@ -66,7 +70,5 @@ typedef struct VideoEnv {
     Int32             imageHeight;
 } VideoEnv;
 
-/* Thread function prototype */
 extern Void *videoThrFxn(Void *arg);
-
 #endif /* _VIDEO_H */

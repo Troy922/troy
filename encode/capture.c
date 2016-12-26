@@ -198,7 +198,7 @@ Void *captureThrFxn(Void *arg)
     Void                 *status   = THREAD_SUCCESS;
     Capture_Attrs         cAttrs   = Capture_Attrs_DM365_DEFAULT;
     Display_Attrs         dAttrs   = Display_Attrs_DM365_VID_DEFAULT;
-    BufferGfx_Attrs       gfxAttrs = BufferGfx_Attrs_DEFAULT;    
+    BufferGfx_Attrs       gfxAttrs = BufferGfx_Attrs_DEFAULT;
     Capture_Handle        hCapture = NULL;
     Display_Handle        hDisplay = NULL;
     BufTab_Handle         hBufTab  = NULL;
@@ -212,6 +212,9 @@ Void *captureThrFxn(Void *arg)
     ColorSpace_Type       colorSpace = ColorSpace_YUV420PSEMI;
     Int                   bufIdx;
     Int                   numCapBufs;
+    BufferGfx_Dimensions    dim;
+   
+
 
     /* Create capture device driver instance */
     cAttrs.numBufs = NUM_CAPTURE_BUFS;
@@ -222,7 +225,7 @@ Void *captureThrFxn(Void *arg)
     videoStd = envp->videoStd;
 
     /* We only support D1, 720P and 1080P input */
-    if (videoStd != VideoStd_D1_NTSC && videoStd != VideoStd_D1_PAL 
+    if (videoStd != VideoStd_D1_NTSC && videoStd != VideoStd_D1_PAL
         && videoStd != VideoStd_720P_60 && videoStd != VideoStd_720P_50 &&
         videoStd != VideoStd_1080I_30) {
         ERR("Need D1/720P/1080P input to this demo\n");
@@ -250,7 +253,7 @@ Void *captureThrFxn(Void *arg)
         capDim.height     = envp->imageHeight;
         capDim.width      = envp->imageWidth;
         capDim.lineLength = BufferGfx_calcLineLength(capDim.width, colorSpace);
-    } 
+    }
     else {
         /* Calculate the dimensions of a video standard given a color space */
         if (BufferGfx_calcDimensions(videoStd, colorSpace, &capDim) < 0) {
@@ -271,14 +274,14 @@ Void *captureThrFxn(Void *arg)
 
     gfxAttrs.dim.height = capDim.height;
     gfxAttrs.dim.width = capDim.width;
-    gfxAttrs.dim.lineLength = 
+    gfxAttrs.dim.lineLength =
         Dmai_roundUp(BufferGfx_calcLineLength(gfxAttrs.dim.width,
                      colorSpace), 32);
     gfxAttrs.dim.x = 0;
     gfxAttrs.dim.y = 0;
     if (colorSpace ==  ColorSpace_YUV420PSEMI) {
         bufSize = gfxAttrs.dim.lineLength * gfxAttrs.dim.height * 3 / 2;
-    } 
+    }
     else {
         bufSize = gfxAttrs.dim.lineLength * gfxAttrs.dim.height * 2;
     }
@@ -308,21 +311,21 @@ Void *captureThrFxn(Void *arg)
     Rendezvous_meet(envp->hRendezvousCapStd);
 
     /* Capture at half frame rate if using COMPONENT input at 720P */
-    if ((envp->videoStd == VideoStd_720P_60) 
+    if ((envp->videoStd == VideoStd_720P_60)
         && (envp->videoInput == Capture_Input_COMPONENT)) {
         cAttrs.videoStd = VideoStd_720P_30;
     }
     else {
-        cAttrs.videoStd = envp->videoStd;    
+        cAttrs.videoStd = envp->videoStd;
     }
 
     /*If its component input and video std is 1080I_30 then make it 1080I_60.*/
-    if (cAttrs.videoStd == VideoStd_1080I_30 && cAttrs.videoInput 
+    if (cAttrs.videoStd == VideoStd_1080I_30 && cAttrs.videoInput
                         == Capture_Input_COMPONENT) {
         cAttrs.videoStd = VideoStd_1080I_60;
     }
 
-    cAttrs.numBufs    = NUM_CAPTURE_BUFS;    
+    cAttrs.numBufs    = NUM_CAPTURE_BUFS;
     cAttrs.colorSpace = colorSpace;
     cAttrs.captureDimension = &gfxAttrs.dim;
     /* Create the capture device driver instance */
@@ -348,12 +351,12 @@ Void *captureThrFxn(Void *arg)
             (dAttrs.videoStd == VideoStd_SIF_NTSC) ||
             (dAttrs.videoStd == VideoStd_SIF_PAL) ||
             (dAttrs.videoStd == VideoStd_VGA) ||
-            (dAttrs.videoStd == VideoStd_D1_NTSC) ||        
+            (dAttrs.videoStd == VideoStd_D1_NTSC) ||
             (dAttrs.videoStd == VideoStd_D1_PAL) ) {
             dAttrs.videoOutput = Display_Output_COMPOSITE;
         } else {
             dAttrs.videoOutput = Display_Output_COMPONENT;
-        }    
+        }
         dAttrs.numBufs    = NUM_DISPLAY_BUFS;
         dAttrs.colorSpace = colorSpace;
         dAttrs.width = capDim.width;
@@ -371,7 +374,7 @@ Void *captureThrFxn(Void *arg)
         hBuf = BufTab_getFreeBuf(hFifoBufTab);
         if (hBuf == NULL) {
             ERR("Failed to fill video pipeline\n");
-            cleanup(THREAD_FAILURE);            
+            cleanup(THREAD_FAILURE);
         }
 
        /* Fill with black the buffer */
@@ -401,8 +404,6 @@ Void *captureThrFxn(Void *arg)
             ERR("Failed to get display buffer\n");
             cleanup(THREAD_FAILURE);
         }
-        
-        /* drawline(hCapBuf); */
 
 
         /* Send buffer to video thread for encoding */
@@ -423,7 +424,7 @@ Void *captureThrFxn(Void *arg)
         if (fifoRet == Dmai_EFLUSH) {
             cleanup(THREAD_SUCCESS);
         }
-        
+
 
         if (!envp->previewDisabled) {
             /* Release buffer to the display device driver */
@@ -439,7 +440,7 @@ Void *captureThrFxn(Void *arg)
             if (Capture_put(hCapture, hDstBuf) < 0) {
                 ERR("Failed to put capture buffer\n");
                 cleanup(THREAD_FAILURE);
-            } 
+            }
         }
         else {
             /* Return the displayed buffer to the capture driver */
@@ -471,7 +472,7 @@ cleanup:
     if (hCapture) {
         Capture_delete(hCapture);
     }
-    
+
     /* Clean up the thread before exiting */
     if (hBufTab) {
         BufTab_delete(hBufTab);

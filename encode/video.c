@@ -48,9 +48,10 @@
 #include <ti/sdo/dmai/BufferGfx.h>
 #include <ti/sdo/dmai/Rendezvous.h>
 #include <ti/sdo/dmai/ce/Venc1.h>
-
+#include <math.h>
 #include "video.h"
 #include "../demo.h"
+#include "process.h"
 /* #include "process.h" */
 
 #ifndef YUV_420SP
@@ -59,36 +60,7 @@
 
 /* Number of buffers in the pipe to the capture thread */
 /* Note: It needs to match capture.c pipe size */
-#define VIDEO_PIPE_SIZE           4 
-
-/* Void drawline(Buffer_Handle hBuf) */
-/* { */
-        /* Int8  *yPtr     = Buffer_getUserPtr(hBuf); */
-        /* Int32  ySize    = Buffer_getSize(hBuf) * 2 / 3; */
-        /* Int8  *cbcrPtr  = yPtr + ySize; */
-        /* Int    bpp = ColorSpace_getBpp(ColorSpace_YUV420PSEMI); */
-        /* Int    y; */
-        /* Int    position1,position2; */
-        /* BufferGfx_Dimensions dim; */
-
-        /* BufferGfx_getDimensions(hBuf, &dim); */
-        /* position1 = dim.height / 2 * dim.lineLength; */
-        /* position2 = dim.height/2 * ( dim.lineLength / 2); */
-        /* yPtr += dim.y * dim.lineLength + dim.x * bpp / 8 + position1; */
-        /* for (y = 0; y < 20; y++) { */
-            /* memset(yPtr, 0x0, dim.width * bpp / 8); */
-            /* yPtr += dim.lineLength; */
-        /* } */
-
-        /* cbcrPtr += dim.y * dim.lineLength / 2 + dim.x * bpp / 8 + position2; */
-        /* for (y = 0; y < 20 / 2; y++) { */
-            /* memset(cbcrPtr, 0x40, dim.width * bpp / 8); */
-            /* cbcrPtr += dim.lineLength; */
-        /* } */
-
-/* } */
-
-
+#define VIDEO_PIPE_SIZE           4
 /******************************************************************************
  * videoThrFxn
  ******************************************************************************/
@@ -104,8 +76,11 @@ Void *videoThrFxn(Void *arg)
     Int                     bufIdx;
     ColorSpace_Type         colorSpace = ColorSpace_YUV420PSEMI;
     Int32                   bufSize;
-
-
+    Int                     relativeBL;
+    Float                   BL;
+    Float                   Tt;
+    Float                   MI;
+    Int                     stbl;
    
     /* Signal that the codec is created and output buffer size available */
     Rendezvous_meet(envp->hRendezvousWriter);
@@ -169,7 +144,6 @@ Void *videoThrFxn(Void *arg)
         if (fifoRet == Dmai_EFLUSH) {
             cleanup(THREAD_SUCCESS);
         }
-        /* drawline(hCapBuf); */
         /* Get a buffer to encode to from the writer thread */
         fifoRet = Fifo_get(envp->hWriterOutFifo, &hDstBuf);
 
@@ -183,11 +157,23 @@ Void *videoThrFxn(Void *arg)
             cleanup(THREAD_SUCCESS);
         }
 
-/*         [> Make sure the whole buffer is used for input <] */
-        BufferGfx_resetDimensions(hCapBuf);
-
-        /* drawline(hCapBuf); */
-        //TODO: add algorithm at this place
+        /* Image Processing */
+        BL = 0;
+        Tt = 0;
+        MI = 0;
+        stbl = 0;
+        if(1 == coalFlag){
+            relativeBL = BlackDragon();
+            Tt=AngleOfFlare(relativeBL);
+            MI = MixIntensity(relativeBL);
+            stbl = stability(relativeBL);
+            if ( BLTFFlag == 1 )
+                BL = RealLength(relativeBL,Tt);
+            else
+                BL = relativeBL;
+            avepro(&BL,&Tt,&MI);
+            gblSetParams(relativeBL, BL, Tt, MI, stbl);
+        }
 
         /* Send encoded buffer to writer thread for filesystem output */
         if (Fifo_put(envp->hWriterInFifo, hCapBuf) < 0) {
@@ -222,9 +208,6 @@ cleanup:
     if (hBufTab) {
         BufTab_delete(hBufTab);
     }
-
-
-
-    return status;
+   return status;
 }
 
