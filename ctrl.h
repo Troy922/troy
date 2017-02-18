@@ -62,7 +62,15 @@ typedef struct CtrlEnv {
     Bool                    osd;
 } CtrlEnv;
 
+extern Int uart_port;
 /* Thread function prototype */
 extern Void *ctrlThrFxn(Void *arg);
 
+extern Void request_send(Int fd);   //dm368 is ready to receive bits.
+extern Void clear_send(int fd);   //dm368 is ready to send bits.
+extern void close_port(int fd);
+extern int set_parity(int fd, int databits, int stopbits, int parity);
+extern void set_speed(int fd, int speed);
+extern int check_port_open(const char *dev,unsigned baud);
+extern int open_gpio(const char *dev);
 #endif /* _CTRL_H */

@@ -96,6 +96,7 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
     Int                   imageWidth;
     Int                   imageHeight;
 
+
     op->time = -1;
 
     if (gettimeofday(&tv, NULL) == -1) {
@@ -313,8 +314,10 @@ Void *ctrlThrFxn(Void *arg)
     Engine_Handle           hEngine             = NULL;
     Cpu_Handle              hCpu                = NULL;
     UI_Key                  key;
-
-    /* Open the codec engine */
+    Int                   nByte;
+    Char                  uart_buffer[32];
+    Int                   i=0;
+        /* Open the codec engine */
     hEngine = Engine_open(envp->engineName, NULL, NULL);
 
     if (hEngine == NULL) {
@@ -340,6 +343,11 @@ Void *ctrlThrFxn(Void *arg)
     while (!gblGetQuit()) {
         /* [> Update the dynamic data, either on the OSD or on the console <] */
          drawDynamicData(hEngine, hCpu, envp->hUI, &osdData); 
+         while(i=read(uart_port,uart_buffer,32)){
+            clear_send(uart_port);
+            nByte = write(uart_port,&uart_buffer,i );
+            request_send(uart_port);
+         }
 
         /* [> Has the demo timelimit been hit? <] */
         if (envp->time > FOREVER && osdData.time >= envp->time) {

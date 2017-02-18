@@ -111,6 +111,7 @@ typedef struct Args {
 
 /* Global variable declarations for this application */
 GlobalData gbl = GBL_DATA_INIT;
+Int uart_port;
 /******************************************************************************
  * usage
  ******************************************************************************/
@@ -612,11 +613,13 @@ Int main(Int argc, Char *argv[])
     Dmai_clear(writerEnv);
     Dmai_clear(videoEnv);
     Dmai_clear(ctrlEnv);
-
-    /* Parse the arguments given to the app and set the app environment */
+    //* Parse the arguments given to the app and set the app environment */
     parseArgs(argc, argv, &args);
+    uart_port = check_port_open("/dev/ttyS1",115200);
+    request_send(uart_port);
 
     printf("Encode demo started.\n");
+
 
     /* Launch interface app */
     if (args.osd) {
@@ -665,10 +668,8 @@ Int main(Int argc, Char *argv[])
     if (validateArgs(&args) == FAILURE) {
         cleanup(EXIT_FAILURE);
     }
-    
     /* Set up the user interface */
     uiSetup(hUI, &args);
-    
     /* Create the Pause object */
     hPauseProcess = Pause_create(&pAttrs);
 
@@ -835,7 +836,9 @@ Int main(Int argc, Char *argv[])
         status = EXIT_FAILURE;
     }
 
+
 cleanup:
+    close_port(uart_port);
     if (args.osd) {
         int rv;
         if (hUI) {
