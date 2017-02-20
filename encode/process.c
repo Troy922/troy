@@ -1,11 +1,12 @@
 #include "tinymath.h"
+#include "protocol.h"
 #include <math.h>
 #include <ti/sdo/dmai/BufferGfx.h>
 #include <ti/sdo/dmai/BufTab.h>
 //-----------------------------------------------------------------------------------
 //需要给出的外部参数
-Int xh0 = 150,yh0 = 0;//火焰边界中心点，(假设了初始值)!需要外部给变量!
-Float A1Agl = 89;//表示火焰方向的角度!需要外部给变量!
+Int xh0 = 180,yh0 = 0;//火焰边界中心点，(假设了初始值)!需要外部给变量!
+Float A1Agl = 90;//表示火焰方向的角度!需要外部给变量!
 Int BLTFFlag = 0;//黑龙相对长度0，绝对长度1标志
 Int coalFlag = 1;//投煤标志1投，0没投
 Int ChangeFlag = 0;//上位机修改数据标志1改，0不改
@@ -13,7 +14,7 @@ Int ChangeFlag = 0;//上位机修改数据标志1改，0不改
 Int SendFlag = 0;//数据发送给上位机0不发送，1发送
 //混合强度的参数
 Int squareSize=10;//每行每列分的块数！需要外部给变量！
-Int greynum = 8;//灰度级数目!需要外部给变量!
+Int greynum = 11;//灰度级数目!需要外部给变量!
 Int greyignore = 2;//干扰级数目!需要外部给变量!
 Int LRboundFlag = 1;//火焰中心的左边为0，右边为1，表示用左边求还是右边求!需要外部给变量!
 Float NMA_k;
@@ -59,14 +60,25 @@ Int MIarray_LP=0;
 //---------------------------------------
 //-----------------------------------------------------------
 //稳定性判别,变量需要放在循环的外面定义
-Float wendinglength[50]={0};
+Float wendinglength[64]={0};
 Int wdxavenum = 20;
 Float nextlength = 0;
 Float priorlength = 0;
 Int Stab_Th = 0.1;//xg
 //定义为全局变量
 //-----------------------------------------------------------
+void parameterInit(void)
+{
+    unsigned long i;
+    parameterUpdate();
+    for(i=0;i<64;i++){
+        BLarray[i]=0;
+        FAarray[i]=0;
+        MIarray[i]=0;
+        wendinglength[i]=0;
+    }
 
+}
 /******************************************************************************
 * @Name:		parameterUpdate(Void)
 * @Description:	update corresponding parameters

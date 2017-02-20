@@ -73,4 +73,5 @@ extern int set_parity(int fd, int databits, int stopbits, int parity);
 extern void set_speed(int fd, int speed);
 extern int check_port_open(const char *dev,unsigned baud);
 extern int open_gpio(const char *dev);
+extern void UART_sendChar(char uart_port);
 #endif /* _CTRL_H */

@@ -53,6 +53,7 @@
 #include "ctrl.h"
 #include "demo.h"
 #include "ui.h"
+#include "protocol.h"
 
 /* How often to poll for new keyboard commands */
 #define CONTROLLATENCY 600000
@@ -315,8 +316,10 @@ Void *ctrlThrFxn(Void *arg)
     Cpu_Handle              hCpu                = NULL;
     UI_Key                  key;
     Int                   nByte;
-    Char                  uart_buffer[32];
+    Char                  uart_buffer;
     Int                   i=0;
+    Char                  instruction[32];
+    Char                  tmpString[20];
         /* Open the codec engine */
     hEngine = Engine_open(envp->engineName, NULL, NULL);
 
@@ -343,13 +346,16 @@ Void *ctrlThrFxn(Void *arg)
     while (!gblGetQuit()) {
         /* [> Update the dynamic data, either on the OSD or on the console <] */
          drawDynamicData(hEngine, hCpu, envp->hUI, &osdData); 
-         while(i=read(uart_port,uart_buffer,32)){
-            clear_send(uart_port);
-            nByte = write(uart_port,&uart_buffer,i );
-            request_send(uart_port);
-         }
 
-        /* [> Has the demo timelimit been hit? <] */
+        while(nByte=read(uart_port,&uart_buffer,1))
+                protocolProcess(uart_buffer);
+        while(!IsQueueEmpty()){
+        /* ERR("\n\nfinishing receiving from uart\n"); */
+            DeQueue(instruction);
+            parseInstruction((unsigned char*)instruction);
+            parameterUpdate();
+        }
+                /* [> Has the demo timelimit been hit? <] */
         if (envp->time > FOREVER && osdData.time >= envp->time) {
             cleanup(THREAD_SUCCESS);
         }

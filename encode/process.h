@@ -2,6 +2,7 @@
 #define _PROCESS_H_
 
 #include <xdc/std.h>
+extern void parameterInit(void);
 //相关参数更新
 extern Void parameterUpdate(Void);
 

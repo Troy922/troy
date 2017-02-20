@@ -71,6 +71,8 @@
 #include "../ctrl.h"
 #include "../demo.h"
 #include "../ui.h"
+#include "protocol.h"
+#include "process.h"
 
 /* The levels of initialization */
 #define LOGSINITIALIZED         0x1
@@ -78,7 +80,7 @@
 #define CAPTURETHREADCREATED    0x40
 #define WRITERTHREADCREATED     0x80
 #define VIDEOTHREADCREATED      0x100
-
+#define MAX_LENGTH_PARA         20 
 /* Thread priorities */
 #define VIDEO_THREAD_PRIORITY   sched_get_priority_max(SCHED_FIFO) - 1
 
@@ -577,6 +579,95 @@ static Int getConfigFromInterface(Args * argsp, UI_Handle hUI, Bool * stopped)
     return SUCCESS;
 }
 
+void ID_setting(){
+    FILE                *ID_File               = NULL;
+    int                 nrw; 
+    Char                tmp_id;
+    Char                buffer_id[32];
+    char                uart_buffer;
+    int                 cnt_0xFF=0;
+    int                 nByte;
+    Bool                ID_settingMode        = 0;
+    ID_File=fopen("MyID","r");
+    nrw=fread(&tmp_id,1,1,ID_File);
+    fclose(ID_File);
+    if(tmp_id > '0' && tmp_id <= '9')
+        MyID = tmp_id - '0';
+    else if(tmp_id >= 'a' && tmp_id <= 'f')
+        MyID = tmp_id - 'a' + 10;
+    else {
+        printf("Read ID Error!");
+        return ;
+    }
+    while(read(uart_port,&uart_buffer,1)){
+            if(uart_buffer == 0xff){
+                cnt_0xFF++;
+                if(cnt_0xFF == 5){
+                    ID_settingMode = 1;
+                    break;
+                }
+            }
+            else
+                cnt_0xFF = 0;
+            }
+
+    int delay=1000;
+    while(delay--);
+
+    if(ID_settingMode == 1){
+        clear_send(uart_port);
+        UART_sendChar(MyID);
+        request_send(uart_port);
+        while(read(uart_port,&uart_buffer,1))
+            if(uart_buffer != 0xff){
+                MyID = uart_buffer;
+                ID_File = fopen("MyID","w");
+                if(MyID > 0 && MyID < 10)
+                    tmp_id = MyID +'0';
+                else if(MyID >= 10 && MyID <= 12)
+                    tmp_id = MyID - 10 + 'a';
+                nrw=fwrite(&tmp_id,1,1,ID_File);
+                fclose(ID_File);
+                clear_send(uart_port);
+                UART_sendChar(MyID);
+                request_send(uart_port);
+        }
+    }
+}
+int  parameter_restore(){
+    /*set board ID*/
+    ID_setting();
+    FILE *para_File = NULL;
+    para_File = fopen("parameter_config","r");
+    if(para_File == NULL){
+    
+        ERR("Open File Error!");
+        return -1;
+    }
+    char instruction[23];
+    char tmp_para[MAX_LENGTH_PARA];
+    int len,i,sum,weight,j = 0;
+    while(fgets(tmp_para, MAX_LENGTH_PARA, para_File)){
+        len = strlen(tmp_para);
+        i = len-1;
+        sum = 0;
+        weight = 1;
+        while(tmp_para[i] < '0' || tmp_para[i] > '9')
+            i--;
+        while(tmp_para[i] != ':' && i >= 0){
+            sum = sum + (tmp_para[i] - '0')*weight;
+            weight = weight * 10;
+            i--;
+        }
+        instruction[2+j] = sum;
+        j++;
+        /*For Debug*/
+/*         clear_send(uart_port); */
+        /* UART_sendChar(sum); */
+        /* request_send(uart_port); */
+    }
+    fclose(para_File);
+}
 /******************************************************************************
  * main
  ******************************************************************************/
@@ -607,6 +698,7 @@ Int main(Int argc, Char *argv[])
     pthread_attr_t      attr;
     Void               *ret;
     Bool                stopped;
+   
 
     /* Zero out the thread environments */
     Dmai_clear(captureEnv);
@@ -615,11 +707,13 @@ Int main(Int argc, Char *argv[])
     Dmai_clear(ctrlEnv);
     //* Parse the arguments given to the app and set the app environment */
     parseArgs(argc, argv, &args);
+
+    /*open uart port and set it to receive mode*/
     uart_port = check_port_open("/dev/ttyS1",115200);
     request_send(uart_port);
+    parameter_restore();
 
     printf("Encode demo started.\n");
-
 
     /* Launch interface app */
     if (args.osd) {

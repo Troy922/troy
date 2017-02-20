@@ -48,6 +48,8 @@
 
 #include "writer.h"
 #include "../demo.h"
+#include "protocol.h"
+#include "../ctrl.h"
 
 /* Number of buffers in writer pipe */
 #define NUM_WRITER_BUFS         10
@@ -65,7 +67,10 @@ Void *writerThrFxn(Void *arg)
     Buffer_Handle       hOutBuf;
     Int                 fifoRet;
     Int                 bufIdx;
-
+    Int                   nByte;
+    Char                  uart_buffer;
+    Int                   i=0;
+    Char                  instruction[32];
     /* Open the output video file */
     outFile = fopen(envp->videoFile, "w");
 
@@ -97,6 +102,16 @@ Void *writerThrFxn(Void *arg)
     Rendezvous_meet(envp->hRendezvousInit);
 
     while (TRUE) {
+
+        /* while(nByte=read(uart_port,&uart_buffer,1)) */
+                /* protocolProcess(uart_buffer); */
+
+        /* while(!IsQueueEmpty()){ */
+            /* DeQueue(instruction); */
+            /* parseInstruction((unsigned char*)instruction); */
+            /* parameterUpdate(); */
+        /* } */
+
         /* Get an encoded buffer from the video thread */
         fifoRet = Fifo_get(envp->hInFifo, &hOutBuf);
 

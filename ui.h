@@ -70,7 +70,8 @@ typedef enum {
     UI_Value_VideoKbps,
     UI_Value_DisplayType,
     UI_Value_ImageResolution,
-    UI_Num_Values
+    UI_Num_Values,
+    UI_Debug
 } UI_Value;
 
 typedef enum {

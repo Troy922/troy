@@ -52,6 +52,7 @@
 #include "video.h"
 #include "../demo.h"
 #include "process.h"
+#include "protocol.h"
 /* #include "process.h" */
 
 #ifndef YUV_420SP
@@ -172,7 +173,17 @@ Void *videoThrFxn(Void *arg)
             else
                 BL = relativeBL;
             avepro(&BL,&Tt,&MI);
+            dataAdd(relativeBL,Tt,MI,stbl);
             gblSetParams(relativeBL, BL, Tt, MI, stbl);
+        }
+        else{
+            relativeBL = 0;
+            BL = 0;
+            Tt = 0;
+            MI = 0;
+            stbl = 0;
+            dataAdd(relativeBL,Tt,MI,stbl);
+            avepro(&BL,&Tt,&MI);
         }
 
         /* Send encoded buffer to writer thread for filesystem output */
