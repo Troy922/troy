@@ -350,7 +350,6 @@ Void *ctrlThrFxn(Void *arg)
         while(nByte=read(uart_port,&uart_buffer,1))
                 protocolProcess(uart_buffer);
         while(!IsQueueEmpty()){
-        /* ERR("\n\nfinishing receiving from uart\n"); */
             DeQueue(instruction);
             parseInstruction((unsigned char*)instruction);
             parameterUpdate();

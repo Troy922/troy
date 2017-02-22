@@ -172,6 +172,9 @@ Void *videoThrFxn(Void *arg)
                 BL = RealLength(relativeBL,Tt);
             else
                 BL = relativeBL;
+            if(USE_FAKE_TT){
+                Tt = FAKE_COEFFA - relativeBL * FAKE_COEFFK / 800 - MI * FAKE_COEFFP / 400;
+            }
             avepro(&BL,&Tt,&MI);
             dataAdd(relativeBL,Tt,MI,stbl);
             gblSetParams(relativeBL, BL, Tt, MI, stbl);

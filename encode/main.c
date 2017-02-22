@@ -583,10 +583,8 @@ void ID_setting(){
     FILE                *ID_File               = NULL;
     int                 nrw; 
     Char                tmp_id;
-    Char                buffer_id[32];
     char                uart_buffer;
     int                 cnt_0xFF=0;
-    int                 nByte;
     Bool                ID_settingMode        = 0;
     ID_File=fopen("MyID","r");
     nrw=fread(&tmp_id,1,1,ID_File);
@@ -599,6 +597,7 @@ void ID_setting(){
         printf("Read ID Error!");
         return ;
     }
+    request_send(uart_port);
     while(read(uart_port,&uart_buffer,1)){
             if(uart_buffer == 0xff){
                 cnt_0xFF++;
@@ -634,19 +633,15 @@ void ID_setting(){
         }
     }
 }
-int  parameter_restore(){
-    /*set board ID*/
-    ID_setting();
+void getParameter(unsigned char *instruction){
+    char tmp_para[MAX_LENGTH_PARA];
+    int len,i,sum,weight,j = 0;
     FILE *para_File = NULL;
     para_File = fopen("parameter_config","r");
     if(para_File == NULL){
-    
         ERR("Open File Error!");
-        return -1;
     }
-    char instruction[23];
-    char tmp_para[MAX_LENGTH_PARA];
-    int len,i,sum,weight,j = 0;
+
     while(fgets(tmp_para, MAX_LENGTH_PARA, para_File)){
         len = strlen(tmp_para);
         i = len-1;
@@ -661,13 +656,48 @@ int  parameter_restore(){
         }
         instruction[2+j] = sum;
         j++;
-        /*For Debug*/
-/*         clear_send(uart_port); */
-        /* UART_sendChar(sum); */
-        /* request_send(uart_port); */
+    }
+    fclose(para_File);
+
+}
+void getRegister(){
+    char tmp_para[MAX_LENGTH_PARA];
+    int len,i,sum,weight,j = 0;
+    FILE *para_File = NULL;
+    para_File = fopen("Registers","r");
+    if(para_File == NULL){
+        ERR("Open File Error!");
+    }
+
+    while(fgets(tmp_para, MAX_LENGTH_PARA, para_File)){
+        len = strlen(tmp_para);
+        i = len-1;
+        sum = 0;
+        weight = 1;
+        while(tmp_para[i] < '0' || tmp_para[i] > '9')
+            i--;
+        while(tmp_para[i] != ':' && i >= 0){
+            sum = sum + (tmp_para[i] - '0')*weight;
+            weight = weight * 10;
+            i--;
+        }
+        Reg[j] = sum;
+        j++;
     }
     fclose(para_File);
 }
+void  parameter_restore(){
+    unsigned char instruction[23];
+    /*set board ID*/
+    ID_setting();
+    getParameter(instruction);
+    clear_send(uart_port);
+    getRegister();
+    instruction[0] = FIXED_LEN;
+    instruction[1] = MODIFY_PARAMETER;
+    parseInstruction(instruction);
+}
+
 /******************************************************************************
  * main
  ******************************************************************************/
@@ -698,7 +728,10 @@ Int main(Int argc, Char *argv[])
     pthread_attr_t      attr;
     Void               *ret;
     Bool                stopped;
-   
+
+    /*open uart port and set it to receive mode*/
+    uart_port = check_port_open("/dev/ttyS1",115200);
+    parameter_restore();
 
     /* Zero out the thread environments */
     Dmai_clear(captureEnv);
@@ -708,11 +741,7 @@ Int main(Int argc, Char *argv[])
     //* Parse the arguments given to the app and set the app environment */
     parseArgs(argc, argv, &args);
 
-    /*open uart port and set it to receive mode*/
-    uart_port = check_port_open("/dev/ttyS1",115200);
-    request_send(uart_port);
-    parameter_restore();
-
+  
     printf("Encode demo started.\n");
 
     /* Launch interface app */
@@ -914,8 +943,7 @@ Int main(Int argc, Char *argv[])
         initMask |= WRITERTHREADCREATED;
 
     }
-
-    /* Main thread becomes the control thread */
+      /* Main thread becomes the control thread */
     ctrlEnv.hRendezvousInit    = hRendezvousInit;
     ctrlEnv.hRendezvousCleanup = hRendezvousCleanup;
     ctrlEnv.hPauseProcess      = hPauseProcess;
