@@ -73,6 +73,7 @@
 #include "../ui.h"
 #include "protocol.h"
 #include "process.h"
+#include "wd.h"
 
 /* The levels of initialization */
 #define LOGSINITIALIZED         0x1
@@ -114,6 +115,7 @@ typedef struct Args {
 /* Global variable declarations for this application */
 GlobalData gbl = GBL_DATA_INIT;
 Int uart_port;
+
 /******************************************************************************
  * usage
  ******************************************************************************/
@@ -732,7 +734,7 @@ Int main(Int argc, Char *argv[])
     /*open uart port and set it to receive mode*/
     uart_port = check_port_open("/dev/ttyS1",115200);
     parameter_restore();
-
+    InitWatchdog();
     /* Zero out the thread environments */
     Dmai_clear(captureEnv);
     Dmai_clear(writerEnv);

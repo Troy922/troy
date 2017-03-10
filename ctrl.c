@@ -345,8 +345,8 @@ Void *ctrlThrFxn(Void *arg)
 
     while (!gblGetQuit()) {
         /* [> Update the dynamic data, either on the OSD or on the console <] */
-         drawDynamicData(hEngine, hCpu, envp->hUI, &osdData); 
-
+        drawDynamicData(hEngine, hCpu, envp->hUI, &osdData); 
+        Feeddog();
         while(nByte=read(uart_port,&uart_buffer,1))
                 protocolProcess(uart_buffer);
         while(!IsQueueEmpty()){

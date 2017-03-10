@@ -46,6 +46,7 @@
 #include <ti/sdo/dmai/Rendezvous.h>
 
 #include "ui.h"
+#include "wd.h"
 
 /* Defining infinite time */
 #define FOREVER         -1
