@@ -48,7 +48,6 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <signal.h>
-
 #include <xdc/std.h>
 
 #include <ti/sdo/ce/trace/gt.h>
@@ -74,7 +73,6 @@
 #include "protocol.h"
 #include "process.h"
 #include "wd.h"
-
 /* The levels of initialization */
 #define LOGSINITIALIZED         0x1
 #define DISPLAYTHREADCREATED    0x20
@@ -115,6 +113,10 @@ typedef struct Args {
 /* Global variable declarations for this application */
 GlobalData gbl = GBL_DATA_INIT;
 Int uart_port;
+Int gpio_num =26 ;
+Int mask = 0x10000000;
+Int gpio = 0;
+Bool gpio_flag = 0;
 
 /******************************************************************************
  * usage
@@ -730,11 +732,18 @@ Int main(Int argc, Char *argv[])
     pthread_attr_t      attr;
     Void               *ret;
     Bool                stopped;
+    Int                 delay;
+    gpio = open("/dev/gpio",O_RDWR);
+    if(!gpio)
+        ERR("Failed to open GPIO!");
+    ioctl(gpio,1,gpio_num);
+    ioctl(gpio,3,gpio_num | mask);
 
     /*open uart port and set it to receive mode*/
+
     uart_port = check_port_open("/dev/ttyS1",115200);
     parameter_restore();
-    InitWatchdog();
+    /* InitWatchdog(); */
     /* Zero out the thread environments */
     Dmai_clear(captureEnv);
     Dmai_clear(writerEnv);
@@ -743,7 +752,6 @@ Int main(Int argc, Char *argv[])
     //* Parse the arguments given to the app and set the app environment */
     parseArgs(argc, argv, &args);
 
-  
     printf("Encode demo started.\n");
 
     /* Launch interface app */

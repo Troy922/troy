@@ -67,11 +67,10 @@ export CSTOOL_DIR
 # The XDC configuration tool command line
 CONFIGURO = $(XDC_INSTALL_DIR)/xs xdc.tools.configuro
 CONFIG_BLD = ../../config.bld
-
 C_FLAGS += -Wall -g
 #below Troy add this
 C_FLAGS += -I/opt/arm-2009q1-203/arm-none-linux-gnueabi/libc/usr/include/opencv
-C_FLAGS += -I/arm/ffmpeg/include
+C_FLAGS += -I/arm/ffmpeg/include 
 C_FLAGS += -I/arm/live/UsageEnvironment/include -I/arm/live/groupsock/include -I/arm/live/liveMedia/include -I/arm/live/BasicUsageEnvironment/include
 LD_FLAGS = -L/arm/live/libliveMedia.a -L/arm/live/libgroupsock.a  -L/arm/live/libBasicUsageEnvironment.a -L/arm/live/libUsageEnvironment.a
 #above Troy add

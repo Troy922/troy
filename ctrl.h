@@ -64,6 +64,10 @@ typedef struct CtrlEnv {
 } CtrlEnv;
 
 extern Int uart_port;
+extern Int gpio_num;
+extern Bool gpio_flag;
+extern Int gpio;
+extern Int mask;
 /* Thread function prototype */
 extern Void *ctrlThrFxn(Void *arg);
 
