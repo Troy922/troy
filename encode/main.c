@@ -113,7 +113,8 @@ typedef struct Args {
 /* Global variable declarations for this application */
 GlobalData gbl = GBL_DATA_INIT;
 Int uart_port;
-Int gpio_num =26 ;
+Int gpio_num[32] = {23,24,25,26,32,33,35,44,45,46,49,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93};
+Int gpio_total = 26;
 Int mask = 0x10000000;
 Int gpio = 0;
 Bool gpio_flag = 0;
@@ -733,12 +734,14 @@ Int main(Int argc, Char *argv[])
     Void               *ret;
     Bool                stopped;
     Int                 delay;
-    gpio = open("/dev/gpio",O_RDWR);
+    gpio = open("/dev/dm368_gpios",O_RDWR);
     if(!gpio)
         ERR("Failed to open GPIO!");
-    ioctl(gpio,1,gpio_num);
-    ioctl(gpio,3,gpio_num | mask);
-
+    Int i;
+    for(i=0;i<gpio_total;i++){
+        ioctl(gpio,GPIO_OUTPUT,gpio_num[i]);
+        ioctl(gpio,GPIO_WRITE,gpio_num[i] | mask);
+    }
     /*open uart port and set it to receive mode*/
 
     uart_port = check_port_open("/dev/ttyS1",115200);

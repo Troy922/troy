@@ -350,11 +350,14 @@ Void *ctrlThrFxn(Void *arg)
        
         /*gpio control*/
         gpio_flag = ~gpio_flag;
-        if(gpio_flag)
-            ioctl(gpio,3,gpio_num | mask);
-        else
-            ioctl(gpio,3,gpio_num & (~mask));
-
+        if(gpio_flag){
+            for(i=0;i<gpio_total;i++)
+                ioctl(gpio,GPIO_WRITE,gpio_num[i] | mask);
+        }
+        else{
+            for(i=0;i<gpio_total;i++)
+                ioctl(gpio,GPIO_WRITE,gpio_num[i] & (~mask));
+        }
         while(nByte=read(uart_port,&uart_buffer,1))
                 protocolProcess(uart_buffer);
         while(!IsQueueEmpty()){

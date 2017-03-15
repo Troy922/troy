@@ -50,6 +50,11 @@
 
 /* Defining infinite time */
 #define FOREVER         -1
+/*GPIO*/
+#define GPIO_INPUT          0
+#define GPIO_OUTPUT         1
+#define GPIO_READ           2
+#define GPIO_WRITE          3
 
 /* Environment passed when creating the thread */
 typedef struct CtrlEnv {
@@ -64,7 +69,8 @@ typedef struct CtrlEnv {
 } CtrlEnv;
 
 extern Int uart_port;
-extern Int gpio_num;
+extern Int gpio_num[32];
+extern Int gpio_total;
 extern Bool gpio_flag;
 extern Int gpio;
 extern Int mask;
