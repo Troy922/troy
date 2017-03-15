@@ -53,6 +53,7 @@
 #include "../demo.h"
 #include "process.h"
 #include "protocol.h"
+#include "../ctrl.h"
 /* #include "process.h" */
 
 #ifndef YUV_420SP
@@ -158,6 +159,7 @@ Void *videoThrFxn(Void *arg)
             cleanup(THREAD_SUCCESS);
         }
 
+        LED_state_set(LED4,LED_ON);
         /* Image Processing */
         BL = 0;
         Tt = 0;
@@ -175,8 +177,9 @@ Void *videoThrFxn(Void *arg)
             if(USE_FAKE_TT){
                 Tt = FAKE_COEFFA - relativeBL * FAKE_COEFFK / 800 - MI * FAKE_COEFFP / 400;
             }
-            avepro(&BL,&Tt,&MI);
+            
             dataAdd(relativeBL,Tt,MI,stbl);
+            avepro(&BL,&Tt,&MI);
             gblSetParams(relativeBL, BL, Tt, MI, stbl);
         }
         else{
@@ -188,7 +191,8 @@ Void *videoThrFxn(Void *arg)
             dataAdd(relativeBL,Tt,MI,stbl);
             avepro(&BL,&Tt,&MI);
         }
-
+        LED_state_set(LED4,LED_OFF);
+        outputToDCS(BL,Tt,MI);
         /* Send encoded buffer to writer thread for filesystem output */
         if (Fifo_put(envp->hWriterInFifo, hCapBuf) < 0) {
             ERR("Failed to send buffer to display thread\n");

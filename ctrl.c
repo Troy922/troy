@@ -302,7 +302,37 @@ Int getKbdCommand(UI_Key *keyPtr)
 
     return SUCCESS;
 }
-
+void LED_state_set(char num,int status){
+    switch(status){
+        case LED_ON:
+            ioctl(gpio,GPIO_WRITE,num | mask);
+            break;
+        case LED_OFF:
+        default:
+            ioctl(gpio,GPIO_WRITE,num & (~mask));
+            break;
+    }
+}
+void LED_init(){
+   Int i;
+   for(i=0;i<8;i++){
+       ioctl(gpio,GPIO_OUTPUT,LED[i]);
+       LED_state_set(LED[i],LED_DEFAULT_STATE);
+   }
+}
+void GPIO_state_set(char num,int status){
+    switch(status){
+        case 1:
+            ioctl(gpio,GPIO_WRITE,num | mask);
+            break;
+        case 0:
+            ioctl(gpio,GPIO_WRITE,num & (~mask));
+            break;
+        default:
+            ERR("Wrong GPIO state");
+            break;
+    }
+}
 /******************************************************************************
  * ctrlThrFxn
  ******************************************************************************/
@@ -345,19 +375,9 @@ Void *ctrlThrFxn(Void *arg)
 
     while (!gblGetQuit()) {
         /* [> Update the dynamic data, either on the OSD or on the console <] */
-        drawDynamicData(hEngine, hCpu, envp->hUI, &osdData); 
+        drawDynamicData(hEngine, hCpu, envp->hUI, &osdData);
         /* Feeddog(); */
-       
-        /*gpio control*/
-        gpio_flag = ~gpio_flag;
-        if(gpio_flag){
-            for(i=0;i<gpio_total;i++)
-                ioctl(gpio,GPIO_WRITE,gpio_num[i] | mask);
-        }
-        else{
-            for(i=0;i<gpio_total;i++)
-                ioctl(gpio,GPIO_WRITE,gpio_num[i] & (~mask));
-        }
+
         while(nByte=read(uart_port,&uart_buffer,1))
                 protocolProcess(uart_buffer);
         while(!IsQueueEmpty()){
@@ -365,7 +385,7 @@ Void *ctrlThrFxn(Void *arg)
             parseInstruction((unsigned char*)instruction);
             parameterUpdate();
         }
-                /* [> Has the demo timelimit been hit? <] */
+        /* [> Has the demo timelimit been hit? <] */
         if (envp->time > FOREVER && osdData.time >= envp->time) {
             cleanup(THREAD_SUCCESS);
         }

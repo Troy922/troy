@@ -1,6 +1,6 @@
 #include "wd.h" 
 
-int timeout = 30;
+int timeout = 100;
 int watchdog;
 void InitWatchdog(){
     watchdog = open("/dev/watchdog",O_WRONLY);

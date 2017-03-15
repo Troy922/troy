@@ -55,6 +55,24 @@
 #define GPIO_OUTPUT         1
 #define GPIO_READ           2
 #define GPIO_WRITE          3
+#define LED_ON              1
+#define LED_OFF             0
+#define LED_DEFAULT_STATE   LED_OFF
+#define LED0                85
+#define LED1                86
+#define LED2                87
+#define LED3                88
+#define LED4                89
+#define LED5                90
+#define LED6                91
+#define LED7                92
+
+extern Char LED[8];
+extern Int gpio_total;
+extern Bool gpio_flag;
+extern Int gpio;
+extern Int mask;
+extern Int uart_port;
 
 /* Environment passed when creating the thread */
 typedef struct CtrlEnv {
@@ -68,12 +86,7 @@ typedef struct CtrlEnv {
     Bool                    osd;
 } CtrlEnv;
 
-extern Int uart_port;
-extern Int gpio_num[32];
-extern Int gpio_total;
-extern Bool gpio_flag;
-extern Int gpio;
-extern Int mask;
+
 /* Thread function prototype */
 extern Void *ctrlThrFxn(Void *arg);
 
@@ -85,4 +98,7 @@ extern void set_speed(int fd, int speed);
 extern int check_port_open(const char *dev,unsigned baud);
 extern int open_gpio(const char *dev);
 extern void UART_sendChar(char uart_port);
+extern void LED_state_set(char num,int status);
+extern void LED_init();
+extern void GPIO_state_set(char num,int status);
 #endif /* _CTRL_H */

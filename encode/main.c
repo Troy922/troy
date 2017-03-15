@@ -73,6 +73,7 @@
 #include "protocol.h"
 #include "process.h"
 #include "wd.h"
+#include "TLV5616.h"
 /* The levels of initialization */
 #define LOGSINITIALIZED         0x1
 #define DISPLAYTHREADCREATED    0x20
@@ -108,13 +109,13 @@ typedef struct Args {
 
 #define DEFAULT_ARGS \
     { VideoStd_720P_60, "720P 60Hz",  Capture_Input_COUNT, \
-       NULL, 0, 0, -1, NULL, FALSE, FOREVER, FALSE, FALSE, FALSE }   
+       NULL, 0, 0, -1, NULL, FALSE, FOREVER, FALSE, FALSE, FALSE }
 
 /* Global variable declarations for this application */
 GlobalData gbl = GBL_DATA_INIT;
 Int uart_port;
-Int gpio_num[32] = {23,24,25,26,32,33,35,44,45,46,49,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93};
-Int gpio_total = 26;
+Char LED[8] = {85,86,87,88,89,90,91,92};
+Int gpio_total = 25;
 Int mask = 0x10000000;
 Int gpio = 0;
 Bool gpio_flag = 0;
@@ -190,7 +191,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
         switch (c) {
             case 0:
                 break;
-            
             case 'v':
                 extension = rindex(optarg, '.');
                 if (extension == NULL) {
@@ -703,6 +703,18 @@ void  parameter_restore(){
     parseInstruction(instruction);
 }
 
+void system_init(){
+        /*open uart port and set it to receive mode*/
+   gpio = open("/dev/dm368_gpios",O_RDWR);
+   if(!gpio)
+       ERR("Failed to open gpio!");
+    uart_port = check_port_open("/dev/ttyS1",115200);
+    LED_init(); 
+    DA_init();
+    parameter_restore();
+    parameterInit();
+    /* InitWatchdog(); */
+}
 /******************************************************************************
  * main
  ******************************************************************************/
@@ -733,21 +745,9 @@ Int main(Int argc, Char *argv[])
     pthread_attr_t      attr;
     Void               *ret;
     Bool                stopped;
-    Int                 delay;
-    gpio = open("/dev/dm368_gpios",O_RDWR);
-    if(!gpio)
-        ERR("Failed to open GPIO!");
-    Int i;
-    for(i=0;i<gpio_total;i++){
-        ioctl(gpio,GPIO_OUTPUT,gpio_num[i]);
-        ioctl(gpio,GPIO_WRITE,gpio_num[i] | mask);
-    }
-    /*open uart port and set it to receive mode*/
 
-    uart_port = check_port_open("/dev/ttyS1",115200);
-    parameter_restore();
-    /* InitWatchdog(); */
-    /* Zero out the thread environments */
+    system_init();
+        /* Zero out the thread environments */
     Dmai_clear(captureEnv);
     Dmai_clear(writerEnv);
     Dmai_clear(videoEnv);
@@ -756,7 +756,7 @@ Int main(Int argc, Char *argv[])
     parseArgs(argc, argv, &args);
 
     printf("Encode demo started.\n");
-
+    LED_state_set(LED0,LED_ON);
     /* Launch interface app */
     if (args.osd) {
         if (launchInterface(&args) == FAILURE) {

@@ -1,5 +1,6 @@
 #include "tinymath.h"
 #include "protocol.h"
+#include "TLV5616.h"
 #include <math.h>
 #include <ti/sdo/dmai/BufferGfx.h>
 #include <ti/sdo/dmai/BufTab.h>
@@ -988,7 +989,42 @@ Int stability(Float BL)
 		return 1;
 	}
 }
+void outputToDCS(float BL,float Tt,float MI)
+{
+	/*黑龙长度转化*/
+	if(1 == BLTFFlag)
+	{
+		BL = 4.0/125*BL+4.0;
+		if(BL < 4)
+			BL = 4;
+		if(BL > 20)
+			BL = 20;
+	}
+	else
+	{
+		BL = 1.0/25*BL+4.0;
+		if(BL < 4)
+			BL = 4;
+		if(BL > 20)
+			BL = 20;
+	}
 
+	/*扩散角*/
+	Tt = 8.0/45*Tt+4;
+	if(Tt < 4)
+		Tt = 4;
+	if(Tt > 20)
+		Tt = 20;
+	/*混合强度*/
+	MI = 0.16*MI + 4;
+	if(MI < 4)
+		MI = 4;
+	if(MI > 20)
+		MI = 20;
+	DA_write(BL_CS,BL);
+	DA_write(Tt_CS,Tt);
+	DA_write(MI_CS,MI);
+}
 /******************************************************************************
 * @Name:		avepro(Float* LLLL,Float* Tt,Float* hunhe)
 * @Description:	get corresponding move average values of BL TT and MI

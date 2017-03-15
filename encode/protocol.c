@@ -14,7 +14,6 @@
 #include "protocol.h"
 #include "process.h"
 #include "../ctrl.h"
-
 char MyID = 1;
 char Reg[16];
 char instQueue[QUEUESIZE][32];		/*÷∏¡Ó∂”¡–*/
