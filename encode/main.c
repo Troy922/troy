@@ -704,12 +704,12 @@ void  parameter_restore(){
 }
 
 void system_init(){
-        /*open uart port and set it to receive mode*/
+   /*open uart port and set it to receive mode*/
    gpio = open("/dev/dm368_gpios",O_RDWR);
+   uart_port = check_port_open("/dev/ttyS1",115200);
    if(!gpio)
        ERR("Failed to open gpio!");
-    uart_port = check_port_open("/dev/ttyS1",115200);
-    LED_init(); 
+    LED_init();
     DA_init();
     parameter_restore();
     parameterInit();
@@ -840,7 +840,7 @@ Int main(Int argc, Char *argv[])
         cleanup(EXIT_FAILURE);
     }
 
-    /* Force the thread to use custom scheduling attributes */
+    /* Force the  thread to use custom scheduling attributes */
     if (pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED)) {
         ERR("Failed to set schedule inheritance attribute\n");
         cleanup(EXIT_FAILURE);
@@ -887,7 +887,7 @@ Int main(Int argc, Char *argv[])
          * Once the capture thread has detected the video standard, make it
          * available to other threads. The capture thread will set the
          * resolution of the buffer to encode in the environment (derived
-         * from the video standard if the user hasn't passed a resolution).
+         * from the  video standard if the user hasn't passed a resolution).
          */
         Rendezvous_meet(hRendezvousCapStd);
 

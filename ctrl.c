@@ -54,6 +54,8 @@
 #include "demo.h"
 #include "ui.h"
 #include "protocol.h"
+#include "TLV5616.h"
+#include "process.h"
 
 /* How often to poll for new keyboard commands */
 #define CONTROLLATENCY 600000
@@ -181,127 +183,7 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
     UI_update(hUI);
 }
 
-/******************************************************************************
- * keyAction
- ******************************************************************************/
-static Int keyAction(UI_Key key, UI_Handle hUI, Pause_Handle hPauseProcess)
-{
-    switch(key) {
-        case UI_Key_PLAY:
-        case UI_Key_RECORD:
-            Pause_off(hPauseProcess);
-            UI_play(hUI);
-            break;
 
-        case UI_Key_PAUSE:
-            Pause_on(hPauseProcess);
-            UI_pause(hUI);
-            break;
-
-        case UI_Key_STOP:
-            //UI_stop(hUI);
-            gblSetQuit();
-            break;
-
-        case UI_Key_INC:
-            UI_decTransparency(hUI);
-            break;
-
-        case UI_Key_DEC:
-            UI_incTransparency(hUI);
-            break;
-
-        case UI_Key_HIDE:
-            UI_toggleVisibility(hUI);
-            break;
-
-        default:
-            break;
-    }
-
-    return SUCCESS;
-}
-
-/******************************************************************************
- * getKbdCommand
- ******************************************************************************/
-Int getKbdCommand(UI_Key *keyPtr)
-{
-    struct timeval tv;
-    fd_set         fds;
-    Int            ret;
-    Char           string[MAX_CMD_LENGTH];
-
-    FD_ZERO(&fds);
-    FD_SET(fileno(stdin), &fds);
-
-    /* Timeout of 0 means polling, we don't want to block */
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-
-    ret = select(FD_SETSIZE, &fds, NULL, NULL, &tv);
-
-    if (ret == -1) {
-        ERR("Select failed on stdin\n");
-        return FAILURE;
-    }
-
-    if (ret == 0) {
-        return SUCCESS;
-    }
-
-    if (FD_ISSET(fileno(stdin), &fds)) {
-        if (fgets(string, MAX_CMD_LENGTH, stdin) == NULL) {
-            return FAILURE;
-        }
-
-        /* Remove the end of line */
-        strtok(string, "\n");
-
-        /* Assign corresponding key */
-        if (strcmp(string, "play") == 0) {
-            *keyPtr = UI_Key_PLAY;
-        }
-        else if (strcmp(string, "pause") == 0) {
-            *keyPtr = UI_Key_PAUSE;
-        }
-        else if (strcmp(string, "stop") == 0) {
-            *keyPtr = UI_Key_STOP;
-        }
-        else if (strcmp(string, "inc") == 0) {
-            *keyPtr = UI_Key_DEC;
-        }
-        else if (strcmp(string, "dec") == 0) {
-            *keyPtr = UI_Key_INC;
-        }
-        else if (strcmp(string, "hide") == 0) {
-            *keyPtr = UI_Key_HIDE;
-        }
-        else if (strcmp(string, "help") == 0) {
-            printf("\nAvailable commands:\n"
-                   "    play  - Play / record video and sound\n"
-                   "    pause - Pause video and sound\n"
-                   "    stop  - Quit demo\n"
-                   "    inc   - Increase OSD visibility\n"
-                   "    dec   - Decrease OSD visibility\n"
-                   "    hide  - Show / hide the OSD\n"
-                   "    help  - Show this help screen\n\n");
-        }
-        else {
-            printf("Unknown command: [ %s ]\n", string);
-        }
-
-        if (*keyPtr != UI_Key_STOP) {
-            printf(COMMAND_PROMPT);
-            fflush(stdout);
-        }
-        else {
-            printf("\n");
-        }
-    }
-
-    return SUCCESS;
-}
 void LED_state_set(char num,int status){
     switch(status){
         case LED_ON:
@@ -333,6 +215,7 @@ void GPIO_state_set(char num,int status){
             break;
     }
 }
+
 /******************************************************************************
  * ctrlThrFxn
  ******************************************************************************/
@@ -344,12 +227,8 @@ Void *ctrlThrFxn(Void *arg)
     Cpu_Attrs               cpuAttrs            = Cpu_Attrs_DEFAULT;
     Engine_Handle           hEngine             = NULL;
     Cpu_Handle              hCpu                = NULL;
-    UI_Key                  key;
-    Int                   nByte;
     Char                  uart_buffer;
-    Int                   i=0;
     Char                  instruction[32];
-    Char                  tmpString[20];
         /* Open the codec engine */
     hEngine = Engine_open(envp->engineName, NULL, NULL);
 
@@ -378,7 +257,7 @@ Void *ctrlThrFxn(Void *arg)
         drawDynamicData(hEngine, hCpu, envp->hUI, &osdData);
         /* Feeddog(); */
 
-        while(nByte=read(uart_port,&uart_buffer,1))
+        while(read(uart_port,&uart_buffer,1))
                 protocolProcess(uart_buffer);
         while(!IsQueueEmpty()){
             DeQueue(instruction);
@@ -388,32 +267,6 @@ Void *ctrlThrFxn(Void *arg)
         /* [> Has the demo timelimit been hit? <] */
         if (envp->time > FOREVER && osdData.time >= envp->time) {
             cleanup(THREAD_SUCCESS);
-        }
-
-        /* [> check if a command came from OSD interface <] */
-        if (envp->osd) {
-            if (UI_getCmd(envp->hUI, &key) == FAILURE) {
-                ERR("Failed to get cmd.\n");
-                cleanup(THREAD_FAILURE);
-            }
-        }
-
-        if (envp->keyboard) {
-            /* [> [> Poll for a key press <] <] */
-            if (getKbdCommand(&key) == FAILURE) {
-                ERR("Failed to get KB cmd.\n");
-                cleanup(THREAD_FAILURE);
-            }
-        }
-
-        
-      /*   If an IR key had been pressed or a keyboard command */
-        /* has been issued, service it. */
-        if (key != 0) {
-            if (keyAction(key, envp->hUI, envp->hPauseProcess) == FAILURE) {
-                ERR("keyAction failed.\n");
-                cleanup(THREAD_FAILURE);
-            }
         }
 
         /* [> Wait a while before polling the keyboard again <] */
