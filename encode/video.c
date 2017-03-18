@@ -83,9 +83,6 @@ Void *videoThrFxn(Void *arg)
     Float                   Tt;
     Float                   MI;
     Int                     stbl;
-   
-    /* Signal that the codec is created and output buffer size available */
-    Rendezvous_meet(envp->hRendezvousWriter);
 
     gfxAttrs.colorSpace = colorSpace;
     gfxAttrs.dim.width  = envp->imageWidth;
@@ -136,25 +133,12 @@ Void *videoThrFxn(Void *arg)
 
         /* Get a buffer to encode from the capture thread */
         fifoRet = Fifo_get(envp->hCaptureOutFifo, &hCapBuf);
-
         if (fifoRet < 0) {
             ERR("Failed to get buffer from video thread\n");
             cleanup(THREAD_FAILURE);
         }
 
         /* Did the capture thread flush the fifo? */
-        if (fifoRet == Dmai_EFLUSH) {
-            cleanup(THREAD_SUCCESS);
-        }
-        /* Get a buffer to encode to from the writer thread */
-        fifoRet = Fifo_get(envp->hWriterOutFifo, &hDstBuf);
-
-        if (fifoRet < 0) {
-            ERR("Failed to get buffer from video thread\n");
-            cleanup(THREAD_FAILURE);
-        }
-
-        /* Did the writer thread flush the fifo? */
         if (fifoRet == Dmai_EFLUSH) {
             cleanup(THREAD_SUCCESS);
         }
@@ -193,11 +177,6 @@ Void *videoThrFxn(Void *arg)
         }
         LED_state_set(LED4,LED_OFF);
         outputToDCS(BL,Tt,MI);
-        /* Send encoded buffer to writer thread for filesystem output */
-        if (Fifo_put(envp->hWriterInFifo, hCapBuf) < 0) {
-            ERR("Failed to send buffer to display thread\n");
-            cleanup(THREAD_FAILURE);
-        }
 
         /* Return buffer to capture thread */
         if (Fifo_put(envp->hCaptureInFifo, hCapBuf) < 0) {
@@ -206,7 +185,7 @@ Void *videoThrFxn(Void *arg)
         }
 
         /* Increment statistics for the user interface */
-        gblIncVideoBytesProcessed(Buffer_getNumBytesUsed(hDstBuf));
+        gblIncVideoBytesProcessed(Buffer_getNumBytesUsed(hCapBuf));
 
         frameCnt++;
     }
@@ -214,9 +193,7 @@ Void *videoThrFxn(Void *arg)
 cleanup:
     /* Make sure the other threads aren't waiting for us */
     Rendezvous_force(envp->hRendezvousInit);
-    Rendezvous_force(envp->hRendezvousWriter);
     Pause_off(envp->hPauseProcess);
-    Fifo_flush(envp->hWriterInFifo);
     Fifo_flush(envp->hCaptureInFifo);
 
     /* Make sure the other threads aren't waiting for init to complete */

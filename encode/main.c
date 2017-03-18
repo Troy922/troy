@@ -66,7 +66,6 @@
 
 #include "video.h"
 #include "capture.h"
-#include "writer.h"
 #include "../ctrl.h"
 #include "../demo.h"
 #include "../ui.h"
@@ -78,7 +77,6 @@
 #define LOGSINITIALIZED         0x1
 #define DISPLAYTHREADCREATED    0x20
 #define CAPTURETHREADCREATED    0x40
-#define WRITERTHREADCREATED     0x80
 #define VIDEOTHREADCREATED      0x100
 #define MAX_LENGTH_PARA         20 
 /* Thread priorities */
@@ -104,7 +102,6 @@ typedef struct Args {
     Int            time;
     Int            osd;
     Bool           previewDisabled;
-    Bool           writeDisabled;
 } Args;
 
 #define DEFAULT_ARGS \
@@ -134,7 +131,6 @@ static void usage(void)
       "                        [video standard default]\n"
       "-b | --videobitrate     Bit rate to encode video at [variable]\n"
       "-w | --preview_disable  Disable preview [preview enabled]\n"
-      "-f | --write_disable    Disable recording of encoded file [enabled]\n"
       "-I | --video_input      Video input source [video standard default]\n"
       "-l | --linein           Use linein as sound input instead of mic \n"
       "                        [off]\n"
@@ -168,7 +164,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
         {"resolution",       required_argument, NULL, 'r'},
         {"videobitrate",     required_argument, NULL, 'b'},
         {"preview_disable",  no_argument,       NULL, 'w'},
-        {"write_disable",    no_argument,       NULL, 'f'},
         {"video_input",      required_argument, NULL, 'I'},
         {"keyboard",         no_argument,       NULL, 'k'},
         {"time",             required_argument, NULL, 't'},
@@ -298,10 +293,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
                 argsp->previewDisabled = TRUE;
                 break;
 
-            case 'f':
-                argsp->writeDisabled = TRUE;
-                break;
-
             case 'h':
                 usage();
                 exit(EXIT_SUCCESS);
@@ -422,10 +413,6 @@ static Int launchInterface(Args * argsp)
   
     if (argsp->previewDisabled) {
         addArg(i, "-w");
-    }
-
-    if (argsp->writeDisabled) {
-        addArg(i, "-f");
     }
 
     if (argsp->videoInput) {
@@ -565,10 +552,6 @@ static Int getConfigFromInterface(Args * argsp, UI_Handle hUI, Bool * stopped)
 
             case 'w':
                 argsp->previewDisabled = TRUE;
-                break;
-
-            case 'f':
-                argsp->writeDisabled = TRUE;
                 break;
 
             case '\33':
@@ -729,16 +712,13 @@ Int main(Int argc, Char *argv[])
     UI_Attrs            uiAttrs;
     Rendezvous_Handle   hRendezvousCapStd   = NULL;
     Rendezvous_Handle   hRendezvousInit     = NULL;
-    Rendezvous_Handle   hRendezvousWriter   = NULL;
     Rendezvous_Handle   hRendezvousCleanup  = NULL;
     Pause_Handle        hPauseProcess       = NULL;
     UI_Handle           hUI                 = NULL;
     struct sched_param  schedParam;
     pthread_t           captureThread;
-    pthread_t           writerThread;
     pthread_t           videoThread;
     CaptureEnv          captureEnv;
-    WriterEnv           writerEnv;
     VideoEnv            videoEnv;
     CtrlEnv             ctrlEnv;
     Int                 numThreads;
@@ -749,7 +729,6 @@ Int main(Int argc, Char *argv[])
     system_init();
         /* Zero out the thread environments */
     Dmai_clear(captureEnv);
-    Dmai_clear(writerEnv);
     Dmai_clear(videoEnv);
     Dmai_clear(ctrlEnv);
     //* Parse the arguments given to the app and set the app environment */
@@ -799,7 +778,6 @@ Int main(Int argc, Char *argv[])
             cleanup(EXIT_SUCCESS);
         }
     }
-
     /* Validate arguments */
     if (validateArgs(&args) == FAILURE) {
         cleanup(EXIT_FAILURE);
@@ -818,7 +796,9 @@ Int main(Int argc, Char *argv[])
     numThreads = 1;
 
     if (args.videoFile) {
-        numThreads += 3;
+        numThreads += 2;
+
+        /* numThreads += 3; */
     }
 
 
@@ -826,10 +806,9 @@ Int main(Int argc, Char *argv[])
     hRendezvousCapStd  = Rendezvous_create(2, &rzvAttrs);
     hRendezvousInit = Rendezvous_create(numThreads, &rzvAttrs);
     hRendezvousCleanup = Rendezvous_create(numThreads, &rzvAttrs);
-    hRendezvousWriter = Rendezvous_create(2, &rzvAttrs);
 
     if (hRendezvousCapStd  == NULL || hRendezvousInit == NULL || 
-        hRendezvousCleanup == NULL || hRendezvousWriter == NULL) {
+        hRendezvousCleanup == NULL) {
         ERR("Failed to create Rendezvous objects\n");
         cleanup(EXIT_FAILURE);
     }
@@ -891,15 +870,6 @@ Int main(Int argc, Char *argv[])
          */
         Rendezvous_meet(hRendezvousCapStd);
 
-        /* Create the writer fifos */
-        writerEnv.hInFifo = Fifo_create(&fAttrs);
-        writerEnv.hOutFifo = Fifo_create(&fAttrs);
-
-        if (writerEnv.hInFifo == NULL || writerEnv.hOutFifo == NULL) {
-            ERR("Failed to open display fifos\n");
-            cleanup(EXIT_FAILURE);
-        }
-
         /* Set the video thread priority */
         schedParam.sched_priority = VIDEO_THREAD_PRIORITY;
         if (pthread_attr_setschedparam(&attr, &schedParam)) {
@@ -910,12 +880,9 @@ Int main(Int argc, Char *argv[])
         /* Create the video thread */
         videoEnv.hRendezvousInit    = hRendezvousInit;
         videoEnv.hRendezvousCleanup = hRendezvousCleanup;
-        videoEnv.hRendezvousWriter  = hRendezvousWriter;
         videoEnv.hPauseProcess      = hPauseProcess;
         videoEnv.hCaptureOutFifo    = captureEnv.hOutFifo;
         videoEnv.hCaptureInFifo     = captureEnv.hInFifo;
-        videoEnv.hWriterOutFifo     = writerEnv.hOutFifo;
-        videoEnv.hWriterInFifo      = writerEnv.hInFifo;
         videoEnv.videoBitRate       = args.videoBitRate;
         videoEnv.imageWidth         = captureEnv.imageWidth;
         videoEnv.imageHeight        = captureEnv.imageHeight;
@@ -933,29 +900,7 @@ Int main(Int argc, Char *argv[])
 
         initMask |= VIDEOTHREADCREATED;
 
-        /*
-         * Wait for the codec to be created in the video thread before
-         * launching the writer thread (otherwise we don't know which size
-         * of buffers to use).
-         */
-        Rendezvous_meet(hRendezvousWriter);
-
-        /* Create the writer thread */
-        writerEnv.hRendezvousInit    = hRendezvousInit;
-        writerEnv.hRendezvousCleanup = hRendezvousCleanup;
-        writerEnv.hPauseProcess      = hPauseProcess;
-        writerEnv.videoFile          = args.videoFile;
-        writerEnv.outBufSize         = videoEnv.outBufSize;
-        writerEnv.writeDisabled      = args.writeDisabled;
-
-        if (pthread_create(&writerThread, NULL, writerThrFxn, &writerEnv)) {
-            ERR("Failed to create writer thread\n");
-            cleanup(EXIT_FAILURE);
-        }
-
-        initMask |= WRITERTHREADCREATED;
-
-    }
+          }
       /* Main thread becomes the control thread */
     ctrlEnv.hRendezvousInit    = hRendezvousInit;
     ctrlEnv.hRendezvousCleanup = hRendezvousCleanup;
@@ -965,6 +910,7 @@ Int main(Int argc, Char *argv[])
     ctrlEnv.hUI                = hUI;
     ctrlEnv.engineName         = engine->engineName;
     ctrlEnv.osd                = args.osd;
+
     ret = ctrlThrFxn(&ctrlEnv);
 
     if (ret == THREAD_FAILURE) {
@@ -984,7 +930,6 @@ cleanup:
     }
     /* Make sure the other threads aren't waiting for init to complete */
     if (hRendezvousCapStd) Rendezvous_force(hRendezvousCapStd);
-    if (hRendezvousWriter) Rendezvous_force(hRendezvousWriter);
     if (hRendezvousInit) Rendezvous_force(hRendezvousInit);
     if (hPauseProcess) Pause_off(hPauseProcess);
 
@@ -995,23 +940,6 @@ cleanup:
             }
         }
     }
-
-    if (initMask & WRITERTHREADCREATED) {
-        if (pthread_join(writerThread, &ret) == 0) {
-            if (ret == THREAD_FAILURE) {
-                status = EXIT_FAILURE;
-            }
-        }
-    }
-
-    if (writerEnv.hOutFifo) {
-        Fifo_delete(writerEnv.hOutFifo);
-    }
-
-    if (writerEnv.hInFifo) {
-        Fifo_delete(writerEnv.hInFifo);
-    }
-
     if (initMask & CAPTURETHREADCREATED) {
         if (pthread_join(captureThread, &ret) == 0) {
             if (ret == THREAD_FAILURE) {

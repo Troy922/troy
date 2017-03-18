@@ -53,10 +53,7 @@
 typedef struct VideoEnv {
     Rendezvous_Handle hRendezvousInit;
     Rendezvous_Handle hRendezvousCleanup;
-    Rendezvous_Handle hRendezvousWriter;
     Pause_Handle      hPauseProcess;
-    Fifo_Handle       hWriterInFifo;
-    Fifo_Handle       hWriterOutFifo;
     Fifo_Handle       hCaptureInFifo;
     Fifo_Handle       hCaptureOutFifo;
     Char             *videoEncoder;

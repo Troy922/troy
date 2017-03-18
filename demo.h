@@ -81,19 +81,19 @@ typedef struct Engine {
     Char    *engineName;
 
     /* Speech decoders in engine */
-    Codec   *speechDecoders;
+    // Codec   *speechDecoders;
 
     /* Audio decoders in engine */
-    Codec   *audioDecoders;
+    // Codec   *audioDecoders;
 
     /* Video decoders in engine */
     Codec   *videoDecoders;
 
     /* Speech encoders in engine */
-    Codec   *speechEncoders;
+    // Codec   *speechEncoders;
 
     /* Audio encoders in engine */
-    Codec   *audioEncoders;
+    // Codec   *audioEncoders;
 
     /* Video encoders in engine */
     Codec   *videoEncoders;
