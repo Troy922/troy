@@ -55,7 +55,7 @@
 #define GPIO_OUTPUT         1
 #define GPIO_READ           2
 #define GPIO_WRITE          3
-#define LED_ON              1
+#define LED_ON              1 
 #define LED_OFF             0
 #define LED_DEFAULT_STATE   LED_OFF
 #define LED0                85
@@ -98,7 +98,7 @@ extern void set_speed(int fd, int speed);
 extern int check_port_open(const char *dev,unsigned baud);
 extern int open_gpio(const char *dev);
 extern void UART_sendChar(char uart_port);
-extern void LED_state_set(char num,int status);
+extern void LED_state_set(char num,char  status);
 extern void LED_init();
 extern void GPIO_state_set(char num,int status);
 #endif /* _CTRL_H */

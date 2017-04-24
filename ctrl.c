@@ -184,17 +184,13 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
 }
 
 
-void LED_state_set(char num,int status){
-    switch(status){
-        case LED_ON:
-            ioctl(gpio,GPIO_WRITE,num | mask);
-            break;
-        case LED_OFF:
-        default:
-            ioctl(gpio,GPIO_WRITE,num & (~mask));
-            break;
-    }
+void LED_state_set(char num,char status){
+    if(status == LED_OFF)
+        ioctl(gpio,GPIO_WRITE,num | mask);
+    else
+        ioctl(gpio,GPIO_WRITE,num & (~mask));
 }
+
 void LED_init(){
    Int i;
    for(i=0;i<8;i++){
@@ -264,10 +260,7 @@ Void *ctrlThrFxn(Void *arg)
             parseInstruction((unsigned char*)instruction);
             parameterUpdate();
         }
-        /* [> Has the demo timelimit been hit? <] */
-        if (envp->time > FOREVER && osdData.time >= envp->time) {
-            cleanup(THREAD_SUCCESS);
-        }
+
 
         /* [> Wait a while before polling the keyboard again <] */
         usleep(CONTROLLATENCY);
