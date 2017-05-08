@@ -38,13 +38,14 @@ void DA_write(unsigned int cs,float val)
 {
 	unsigned int dat;
 	unsigned int i;
-
-    dat =(unsigned int) ((val-4)*2048/16);
-    dat = dat | 0xD000;
-    if(cs == 0){
-        ERR("\ndata= %u\n",dat);
-        ERR("\nval= %f\n",val);
-    }
+    dat = 0;
+    dat =(unsigned int) ((val-4)*2071/16);
+    /* dat = (unsigned int)val; */
+    /* dat = dat | 0xD000; */
+/*     if(cs == 0){ */
+        /* ERR("\ndata= %u\n",dat); */
+        /* ERR("\nval= %f\n",val); */
+    /* } */
 	//1101
 	if(cs == 0)
 	{
