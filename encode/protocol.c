@@ -14,6 +14,7 @@
 #include "protocol.h"
 #include "process.h"
 #include "../ctrl.h"
+
 char MyID = 1;
 char Reg[16];
 char instQueue[QUEUESIZE][32];		/*÷∏¡Ó∂”¡–*/
@@ -156,6 +157,7 @@ void protocolProcess(char dat)
 void ack(void)
 {
     clear_send(uart_port);
+    LED_blink(LED3);
     UART_sendChar(0xFF);	/*Packet Head	*/
 	UART_sendChar(0xFF);
 	UART_sendChar(0x00);	/*Master's ID	*/
@@ -234,8 +236,8 @@ void DeQueue(char *inst)
 * @Return:		none
 * @Date:		2015-04-04 15:01:52
 * ***************************************************************************/
-#define	DTBUF_LEN	32
-char dataBuffer[DTBUF_LEN][4];
+#define	DTBUF_LEN  16	
+unsigned char dataBuffer[DTBUF_LEN][4];
 unsigned long dataCount = 0;
 void dataAdd(float BL,float Tt,float MI,int wdxflag)
 {
@@ -243,10 +245,15 @@ void dataAdd(float BL,float Tt,float MI,int wdxflag)
 	{
 		dataCount = 0;
 	}
-	dataBuffer[dataCount][0] = (char)(BL*0.5+0.5);
-	dataBuffer[dataCount][1] = (char)(Tt*2+0.5);
-	dataBuffer[dataCount][2] = (char)(MI + 0.5);
-	dataBuffer[dataCount][3] = (char)wdxflag;
+   /*  dataBuffer[dataCount][0] = (unsigned char)(BL*0.5+0.5); */
+	/* dataBuffer[dataCount][1] = (unsigned char)(Tt*2+0.5); */
+	/* dataBuffer[dataCount][2] = (unsigned char)(MI + 0.5); */
+	/* dataBuffer[dataCount][3] = (unsigned char)wdxflag; */
+
+	dataBuffer[dataCount][0] = (unsigned char)BL;
+	dataBuffer[dataCount][1] = (unsigned char)Tt;
+	dataBuffer[dataCount][2] = (unsigned char)MI;
+	dataBuffer[dataCount][3] = (unsigned char)wdxflag;
 	dataCount++;
 }
 /******************************************************************************
@@ -271,13 +278,14 @@ void transmitDataPacket(void)
 {
 	unsigned long i,cs;
     clear_send(uart_port);
+    LED_blink(LED3);
     UART_sendChar(0xFF);					/*Packet Head	*/
 	UART_sendChar(0xFF);
 	UART_sendChar(0x00);					/*Master's ID	*/
 	UART_sendChar((char)(2+(dataCount<<2)));	/*Length		*/
 	UART_sendChar(0xFE);					/*DATA WORD		*/
 	cs = dataCount<<2;
-	for(i=0;i<dataCount;i++)
+    for(i=0;i<dataCount;i++)
 	{
 		UART_sendChar(dataBuffer[i][0]);
 		UART_sendChar(dataBuffer[i][1]);

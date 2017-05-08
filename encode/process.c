@@ -4,6 +4,8 @@
 #include <math.h>
 #include <ti/sdo/dmai/BufferGfx.h>
 #include <ti/sdo/dmai/BufTab.h>
+
+#include "../demo.h" 
 //-----------------------------------------------------------------------------------
 //需要给出的外部参数
 Int xh0 = 180,yh0 = 0;//火焰边界中心点，(假设了初始值)!需要外部给变量!
@@ -769,13 +771,17 @@ Float MixIntensity(Int BLength) //混合强度,sqrt,pow
 	Float wbkindi;
 	Float avacol;
 	Float middlevalue2;
+
 	Int xylabel=0;
 	Int x=0,y=0;
 	Float d1=0;
 	Int xst=0,yst=0,xincd=1,yincd=1;
 	Float xh0yh0;//表示中心点在分割线哪边的系数
 	Int F1=1,F2=1,F3=1,F4=1;//在分割线哪边的系数
-	Int potindi = 256/greynum;
+
+	Int potindi = 256/11;
+	/* Int potindi = 256/greynum; */
+
 	Int greydegree[20];
 	Int Density_N;
 	Int Block_SZ;
@@ -992,35 +998,35 @@ Int stability(Float BL)
 void outputToDCS(float BL,float Tt,float MI)
 {
 	/*黑龙长度转化*/
-	if(1 == BLTFFlag)
-	{
-		BL = 4.0/125*BL+4.0;
-		if(BL < 4)
-			BL = 4;
-		if(BL > 20)
-			BL = 20;
-	}
-	else
-	{
-		BL = 1.0/25*BL+4.0;
-		if(BL < 4)
-			BL = 4;
-		if(BL > 20)
-			BL = 20;
-	}
+    if(1 == BLTFFlag)
+    {
+        /* BL = 4.0/125*BL+4.0; */
+        if(BL < 4)
+            BL = 4;
+        if(BL > 20)
+            BL = 20;
+    }
+    else
+    {
+        /* BL = 1.0/25*BL+4.0; */
+        if(BL < 4)
+            BL = 4;
+        if(BL > 20)
+            BL = 20;
+    }
 
 	/*扩散角*/
-	Tt = 8.0/45*Tt+4;
-	if(Tt < 4)
-		Tt = 4;
-	if(Tt > 20)
-		Tt = 20;
+    /* Tt = 8.0/45*Tt+4; */
+    if(Tt < 4)
+        Tt = 4;
+    if(Tt > 20)
+        Tt = 20;
 	/*混合强度*/
-	MI = 0.16*MI + 4;
-	if(MI < 4)
-		MI = 4;
-	if(MI > 20)
-		MI = 20;
+    /* MI = 0.16*MI + 4; */
+    if(MI < 4)
+        MI = 4;
+    if(MI > 20)
+        MI = 20;
 	DA_write(BL_CS,BL);
 	DA_write(Tt_CS,Tt);
 	DA_write(MI_CS,MI);

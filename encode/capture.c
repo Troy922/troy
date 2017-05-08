@@ -51,6 +51,7 @@
 
 #include "capture.h"
 #include "../demo.h"
+#include "../ctrl.h"
 
 /* Buffering for the display driver */
 #define NUM_DISPLAY_BUFS        3 
@@ -449,10 +450,13 @@ Void *captureThrFxn(Void *arg)
                 cleanup(THREAD_FAILURE);
             }
         }
-
         /* Increment statistics for the user interface */
         gblIncFrames();
-
+        pthread_mutex_lock(&mutex_dcs);
+        while(status_thread == THREAD_STOP){
+            pthread_cond_wait(&cond_capture,&mutex_dcs);
+        }
+        pthread_mutex_unlock(&mutex_dcs);
     }
 
 cleanup:

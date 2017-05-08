@@ -135,7 +135,6 @@ static void usage(void)
       "-l | --linein           Use linein as sound input instead of mic \n"
       "                        [off]\n"
       "-k | --keyboard         Enable keyboard interface [off]\n"
-      "-t | --time             Number of seconds to run the demo [infinite]\n"
       "-o | --osd              Show demo data on an OSD [off]\n"
       "-h | --help             Print this message\n\n"
       "Video standards available\n"
@@ -166,7 +165,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
         {"preview_disable",  no_argument,       NULL, 'w'},
         {"video_input",      required_argument, NULL, 'I'},
         {"keyboard",         no_argument,       NULL, 'k'},
-        {"time",             required_argument, NULL, 't'},
         {"osd",              no_argument,       NULL, 'o'},
         {"help",             no_argument,       NULL, 'h'},
         {0, 0, 0, 0}
@@ -279,10 +277,6 @@ static Void parseArgs(Int argc, Char *argv[], Args *argsp)
 
             case 'k':
                 argsp->keyboard = TRUE;
-                break;
-
-            case 't':
-                argsp->time = atoi(optarg);
                 break;
 
             case 'o':
@@ -679,7 +673,6 @@ void  parameter_restore(){
     /*set board ID*/
     ID_setting();
     getParameter(instruction);
-    clear_send(uart_port);
     getRegister();
     instruction[0] = FIXED_LEN;
     instruction[1] = MODIFY_PARAMETER;
@@ -725,7 +718,7 @@ Int main(Int argc, Char *argv[])
     pthread_attr_t      attr;
     Void               *ret;
     Bool                stopped;
-
+    args.time = 15;
     system_init();
         /* Zero out the thread environments */
     Dmai_clear(captureEnv);
@@ -736,6 +729,8 @@ Int main(Int argc, Char *argv[])
 
     printf("Encode demo started.\n");
     LED_state_set(LED0,LED_ON);
+    GPIO_state_set(27,1); 
+    GPIO_state_set(TLV_CS0,1); 
     /* Launch interface app */
     if (args.osd) {
         if (launchInterface(&args) == FAILURE) {
@@ -744,7 +739,16 @@ Int main(Int argc, Char *argv[])
     }
 
     /* Initialize the mutex which protects the global data */
-    pthread_mutex_init(&gbl.mutex, NULL);
+    if(pthread_mutex_init(&gbl.mutex, NULL))
+        ERR("mutex init error!\n");
+    if(pthread_mutex_init(&mutex_dcs,NULL))
+        ERR("mutex_dcs init error!\n");
+
+    if(pthread_cond_init(&cond_video,NULL))
+        ERR("cond_video init error!\n");
+
+    if(pthread_cond_init(&cond_capture,NULL))
+        ERR("cond_capture init error!\n");
 
     /* Set the priority of this whole process to max (requires root) */
     setpriority(PRIO_PROCESS, 0, -20);
@@ -983,7 +987,9 @@ cleanup:
 
 
     pthread_mutex_destroy(&gbl.mutex);
-
+    pthread_mutex_destroy(&mutex_dcs);
+    pthread_cond_destroy(&cond_video);
+    pthread_cond_destroy(&cond_capture);
     exit(status);
     
 }

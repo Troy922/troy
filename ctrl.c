@@ -66,6 +66,7 @@
 /* Maximum length of a keyboard command */
 #define MAX_CMD_LENGTH       80
 
+#define delay()	usleep(100)
 /* Structure containing the state of the OSD */
 typedef struct OsdData {
     Int           time;
@@ -79,6 +80,10 @@ typedef struct OsdData {
 /* Initial values of osd data structure */
 #define OSD_DATA_INIT        { -1, 0, 0, 0, 0, 0 }
 
+pthread_mutex_t mutex_dcs = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_video = PTHREAD_COND_INITIALIZER;
+pthread_cond_t cond_capture = PTHREAD_COND_INITIALIZER; 
+int status_thread =THREAD_RUN;
 /******************************************************************************
  * drawDynamicData
  ******************************************************************************/
@@ -182,8 +187,13 @@ static Void drawDynamicData(Engine_Handle hEngine, Cpu_Handle hCpu,
 
     UI_update(hUI);
 }
-
-
+void LED_blink(char num){
+    LED_state_set(num,LED_ON);
+    usleep(1000);
+    LED_state_set(num,LED_OFF);
+    usleep(10);
+}
+ 
 void LED_state_set(char num,char status){
     if(status == LED_OFF)
         ioctl(gpio,GPIO_WRITE,num | mask);
@@ -198,7 +208,7 @@ void LED_init(){
        LED_state_set(LED[i],LED_DEFAULT_STATE);
    }
 }
-void GPIO_state_set(char num,int status){
+void GPIO_state_set(char num,char status){
     switch(status){
         case 1:
             ioctl(gpio,GPIO_WRITE,num | mask);
@@ -211,7 +221,31 @@ void GPIO_state_set(char num,int status){
             break;
     }
 }
+void thread_pause(){
+    if(status_thread == THREAD_RUN){
+        pthread_mutex_lock(&mutex_dcs);
+        status_thread = THREAD_STOP;
+        /* printf("thread stop!\n"); */
+        pthread_mutex_unlock(&mutex_dcs);
+    }
+    else{
+        ERR("pthread pause already!\n");
+    }
+}
 
+void thread_resume(){
+    if(status_thread == THREAD_STOP){
+        pthread_mutex_lock(&mutex_dcs);
+        status_thread = THREAD_RUN;
+        pthread_cond_signal(&cond_video);
+        pthread_cond_signal(&cond_capture);
+        /* printf("pthread run!\n"); */
+        pthread_mutex_unlock(&mutex_dcs);
+    }
+    else{
+        ERR("pthread run already!\n");
+    }
+}
 /******************************************************************************
  * ctrlThrFxn
  ******************************************************************************/
@@ -252,18 +286,23 @@ Void *ctrlThrFxn(Void *arg)
         /* [> Update the dynamic data, either on the OSD or on the console <] */
         drawDynamicData(hEngine, hCpu, envp->hUI, &osdData);
         /* Feeddog(); */
+        /*analog output*/
+       /* DEBUG("status = %d\n",status_thread);  */
+        
+        thread_pause();
+        outputToDCS(gblGetBL(),gblGetTt(),gblGetMI());
+        thread_resume();
 
-        while(read(uart_port,&uart_buffer,1))
+        request_send(uart_port);
+        while(read(uart_port,&uart_buffer,1)){
+                LED_blink(LED2);
                 protocolProcess(uart_buffer);
+        }
         while(!IsQueueEmpty()){
             DeQueue(instruction);
             parseInstruction((unsigned char*)instruction);
             parameterUpdate();
         }
-
-
-        /* [> Wait a while before polling the keyboard again <] */
-        usleep(CONTROLLATENCY);
     }
 
 cleanup:

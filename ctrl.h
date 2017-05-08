@@ -41,10 +41,9 @@
 #define _CTRL_H
 
 #include <xdc/std.h>
-
 #include <ti/sdo/dmai/Pause.h>
 #include <ti/sdo/dmai/Rendezvous.h>
-
+#include<pthread.h>
 #include "ui.h"
 #include "wd.h"
 
@@ -67,6 +66,13 @@
 #define LED6                91
 #define LED7                92
 
+#define THREAD_RUN                  1
+#define THREAD_STOP                 0
+
+extern pthread_mutex_t mutex_dcs;
+extern pthread_cond_t cond_video;
+extern pthread_cond_t cond_capture;
+extern int status_thread;
 extern Char LED[8];
 extern Int gpio_total;
 extern Bool gpio_flag;
@@ -98,7 +104,9 @@ extern void set_speed(int fd, int speed);
 extern int check_port_open(const char *dev,unsigned baud);
 extern int open_gpio(const char *dev);
 extern void UART_sendChar(char uart_port);
+
+extern void LED_blink(char num);
 extern void LED_state_set(char num,char  status);
 extern void LED_init();
-extern void GPIO_state_set(char num,int status);
+extern void GPIO_state_set(char num,char status);
 #endif /* _CTRL_H */

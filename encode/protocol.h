@@ -12,14 +12,13 @@
 #define CHANGE_REGESTER     0XFB
 
 #define FIXED_LEN			23
-
-#define QUEUESIZE	8
-extern char Reg[16];
-#define USE_FAKE_TT         (Reg[0]&(1<<0))      /*0 bit of Register 0 is fake angleofflare bit. */
+#define QUEUESIZE       	8
+#define USE_FAKE_TT         (Reg[0])      /*0 bit of Register 0 is fake angleofflare bit. */
 #define FAKE_COEFFA         (Reg[1])             /*coefficiet for angleofflare*/
 #define FAKE_COEFFK         (Reg[2])             /*coefficient for gradient of blackdragon */
 #define FAKE_COEFFP         (Reg[3])             /*coefficient for mix intensity*/
 
+extern char Reg[16];
 extern char MyID;
 extern Char para_name[21][20];
 void protocolProcess(char dat);

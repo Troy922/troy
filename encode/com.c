@@ -27,6 +27,7 @@ void request_send(int fd)   //dm368 is ready to receive bits.
     ioctl(fd, TIOCMGET, &status);
     status &= ~TIOCM_RTS;
     ioctl(fd, TIOCMSET, &status);
+    GPIO_state_set(23,0);
 }
 
 void clear_send(int fd)   //dm368 is ready to send bits.
@@ -34,6 +35,7 @@ void clear_send(int fd)   //dm368 is ready to send bits.
     ioctl(fd, TIOCMGET, &status);
     status |= TIOCM_RTS;
     ioctl(fd, TIOCMSET, &status);
+    GPIO_state_set(23,1);
 }
 
 

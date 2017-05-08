@@ -48,6 +48,8 @@
 /* Error message */
 #define ERR(fmt, args...) fprintf(stderr, "Error: " fmt, ## args)
 
+#define DEBUG(fmt, args...) fprintf(stdout,"DEBUG:\n" fmt, ## args)
+
 /* Function error codes */
 #define SUCCESS             0
 #define FAILURE             -1

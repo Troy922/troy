@@ -54,6 +54,7 @@
 #include "process.h"
 #include "protocol.h"
 #include "../ctrl.h"
+#include "TLV5616.h"
 /* #include "process.h" */
 
 #ifndef YUV_420SP
@@ -83,6 +84,7 @@ Void *videoThrFxn(Void *arg)
     Float                   Tt;
     Float                   MI;
     Int                     stbl;
+    Char                    LED_Freq = 20 , LF_ON = 0 ,LF_OFF = 0;
 
     gfxAttrs.colorSpace = colorSpace;
     gfxAttrs.dim.width  = envp->imageWidth;
@@ -129,6 +131,7 @@ Void *videoThrFxn(Void *arg)
     
     while (!gblGetQuit()) {
         /* Pause processing? */
+      
         Pause_test(envp->hPauseProcess);
 
         /* Get a buffer to encode from the capture thread */
@@ -142,28 +145,37 @@ Void *videoThrFxn(Void *arg)
         if (fifoRet == Dmai_EFLUSH) {
             cleanup(THREAD_SUCCESS);
         }
-
-        LED_state_set(LED4,LED_ON);
+        if(LF_ON ++ >= LED_Freq/2){
+            LED_state_set(LED1,LED_ON);
+            LF_ON = 0;
+        }
+       GetImgtoArray(hCapBuf);
         /* Image Processing */
         BL = 0;
         Tt = 0;
         MI = 0;
         stbl = 0;
-        if(1 == coalFlag){
-            relativeBL = BlackDragon();
-            Tt=AngleOfFlare(relativeBL);
-            MI = MixIntensity(relativeBL);
-            stbl = stability(relativeBL);
-            if ( BLTFFlag == 1 )
-                BL = RealLength(relativeBL,Tt);
-            else
-                BL = relativeBL;
-            if(USE_FAKE_TT){
-                Tt = FAKE_COEFFA - relativeBL * FAKE_COEFFK / 800 - MI * FAKE_COEFFP / 400;
-            }
+        /* if(1 == coalFlag){ */
+       if(1 == Reg[8]){
+/*             relativeBL = BlackDragon(); */
+            /* Tt=AngleOfFlare(relativeBL); */
+            /* MI = MixIntensity(relativeBL); */
+            /* stbl = stability(relativeBL); */
+            /* if ( BLTFFlag == 1 ) */
+                /* BL = RealLength(relativeBL,Tt); */
+            /* else */
+                /* BL = relativeBL; */
+            /* if(USE_FAKE_TT){ */
+                /* Tt = FAKE_COEFFA - relativeBL * FAKE_COEFFK / 800 - MI * FAKE_COEFFP / 400; */
+                BL =(float) Reg[4];
+                Tt = Reg[5];
+                MI = Reg[6];
+                relativeBL = BL;
+                /* DA_write_test(BL); */
+            /* } */
             
             dataAdd(relativeBL,Tt,MI,stbl);
-            avepro(&BL,&Tt,&MI);
+            /* avepro(&BL,&Tt,&MI); */
             gblSetParams(relativeBL, BL, Tt, MI, stbl);
         }
         else{
@@ -174,22 +186,30 @@ Void *videoThrFxn(Void *arg)
             stbl = 0;
             dataAdd(relativeBL,Tt,MI,stbl);
             avepro(&BL,&Tt,&MI);
+            gblSetParams(relativeBL, BL, Tt, MI, stbl);
         }
-        LED_state_set(LED4,LED_OFF);
-        outputToDCS(BL,Tt,MI);
+        if (LF_OFF ++ >= LED_Freq){
+            LED_state_set(LED1,LED_OFF);
+            LF_OFF = 0;
+        }
+        /* outputToDCS(BL,Tt,MI); */
 
         /* Return buffer to capture thread */
         if (Fifo_put(envp->hCaptureInFifo, hCapBuf) < 0) {
             ERR("Failed to send buffer to display thread\n");
             cleanup(THREAD_FAILURE);
         }
-
         /* Increment statistics for the user interface */
         gblIncVideoBytesProcessed(Buffer_getNumBytesUsed(hCapBuf));
-
         frameCnt++;
+        pthread_mutex_lock(&mutex_dcs);
+        while(status_thread == THREAD_STOP){
+            pthread_cond_wait(&cond_video,&mutex_dcs);
+        break;
+        }
+        pthread_mutex_unlock(&mutex_dcs);
     }
-
+    
 cleanup:
     /* Make sure the other threads aren't waiting for us */
     Rendezvous_force(envp->hRendezvousInit);

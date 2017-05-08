@@ -2,7 +2,7 @@
 #define _PROCESS_H_
 
 #include <xdc/std.h>
-
+#include <pthread.h>
 
 extern void parameterInit(void);
 //相关参数更新
@@ -68,6 +68,5 @@ extern Int FAavenum;
 extern Int MIavenum;
 extern Int wdxavenum;
 extern Int Stab_Th;
-
 
 #endif /*_PROCESS_H_*/
