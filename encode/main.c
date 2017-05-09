@@ -741,6 +741,7 @@ Int main(Int argc, Char *argv[])
     /* Initialize the mutex which protects the global data */
     if(pthread_mutex_init(&gbl.mutex, NULL))
         ERR("mutex init error!\n");
+    /*Initialize the mutex and condition parameters for threads suspending.*/
     if(pthread_mutex_init(&mutex_dcs,NULL))
         ERR("mutex_dcs init error!\n");
 

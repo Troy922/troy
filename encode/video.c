@@ -157,25 +157,26 @@ Void *videoThrFxn(Void *arg)
         stbl = 0;
         /* if(1 == coalFlag){ */
        if(1 == Reg[8]){
-/*             relativeBL = BlackDragon(); */
-            /* Tt=AngleOfFlare(relativeBL); */
-            /* MI = MixIntensity(relativeBL); */
-            /* stbl = stability(relativeBL); */
-            /* if ( BLTFFlag == 1 ) */
-                /* BL = RealLength(relativeBL,Tt); */
-            /* else */
-                /* BL = relativeBL; */
-            /* if(USE_FAKE_TT){ */
+            relativeBL = BlackDragon();
+            Tt=AngleOfFlare(relativeBL);
+            MI = MixIntensity(relativeBL);
+            stbl = stability(relativeBL);
+            if ( BLTFFlag == 1 )
+                BL = RealLength(relativeBL,Tt);
+            else
+                BL = relativeBL;
+            /*registers' definition can be found in protocol.h.*/
+            /*using fake BL,Tt and MI.*/
+            if(USE_FAKE_TT){
                 /* Tt = FAKE_COEFFA - relativeBL * FAKE_COEFFK / 800 - MI * FAKE_COEFFP / 400; */
-                BL =(float) Reg[4];
+                BL = Reg[4];
                 Tt = Reg[5];
                 MI = Reg[6];
                 relativeBL = BL;
-                /* DA_write_test(BL); */
-            /* } */
+            }
             
             dataAdd(relativeBL,Tt,MI,stbl);
-            /* avepro(&BL,&Tt,&MI); */
+            avepro(&BL,&Tt,&MI);
             gblSetParams(relativeBL, BL, Tt, MI, stbl);
         }
         else{
@@ -186,13 +187,13 @@ Void *videoThrFxn(Void *arg)
             stbl = 0;
             dataAdd(relativeBL,Tt,MI,stbl);
             avepro(&BL,&Tt,&MI);
+            /*gbl's definition can be found in demo.h.*/
             gblSetParams(relativeBL, BL, Tt, MI, stbl);
         }
         if (LF_OFF ++ >= LED_Freq){
             LED_state_set(LED1,LED_OFF);
             LF_OFF = 0;
         }
-        /* outputToDCS(BL,Tt,MI); */
 
         /* Return buffer to capture thread */
         if (Fifo_put(envp->hCaptureInFifo, hCapBuf) < 0) {
@@ -202,14 +203,15 @@ Void *videoThrFxn(Void *arg)
         /* Increment statistics for the user interface */
         gblIncVideoBytesProcessed(Buffer_getNumBytesUsed(hCapBuf));
         frameCnt++;
+
+        /*suspend thread while outputing analog signal to dcs.*/
         pthread_mutex_lock(&mutex_dcs);
         while(status_thread == THREAD_STOP){
             pthread_cond_wait(&cond_video,&mutex_dcs);
-        break;
         }
         pthread_mutex_unlock(&mutex_dcs);
     }
-    
+
 cleanup:
     /* Make sure the other threads aren't waiting for us */
     Rendezvous_force(envp->hRendezvousInit);

@@ -40,13 +40,6 @@ void DA_write(unsigned int cs,float val)
 	unsigned int i;
     dat = 0;
     dat =(unsigned int) ((val-4)*2071/16);
-    /* dat = (unsigned int)val; */
-    /* dat = dat | 0xD000; */
-/*     if(cs == 0){ */
-        /* ERR("\ndata= %u\n",dat); */
-        /* ERR("\nval= %f\n",val); */
-    /* } */
-	//1101
 	if(cs == 0)
 	{
         GPIO_state_set(TLV_CS0,0);

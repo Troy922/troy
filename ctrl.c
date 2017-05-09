@@ -259,6 +259,7 @@ Void *ctrlThrFxn(Void *arg)
     Cpu_Handle              hCpu                = NULL;
     Char                  uart_buffer;
     Char                  instruction[32];
+    Char                    LED_Freq = 5 , LF_ON = 0 ,LF_OFF = 0;
         /* Open the codec engine */
     hEngine = Engine_open(envp->engineName, NULL, NULL);
 
@@ -286,13 +287,21 @@ Void *ctrlThrFxn(Void *arg)
         /* [> Update the dynamic data, either on the OSD or on the console <] */
         drawDynamicData(hEngine, hCpu, envp->hUI, &osdData);
         /* Feeddog(); */
+        if(LF_ON ++ >= LED_Freq/2){
+            LED_state_set(LED4,LED_ON);
+            LF_ON = 0;
+        }
         /*analog output*/
-       /* DEBUG("status = %d\n",status_thread);  */
-        
+        /*it is necessary to suspend other threads to make sure that */
+        /*the outputing process is not break, for the need of tlv5616's timing*/
         thread_pause();
         outputToDCS(gblGetBL(),gblGetTt(),gblGetMI());
         thread_resume();
-
+        if (LF_OFF ++ >= LED_Freq){
+            LED_state_set(LED4,LED_OFF);
+            LF_OFF = 0;
+        }
+        /*receive and enqueue instructions.*/
         request_send(uart_port);
         while(read(uart_port,&uart_buffer,1)){
                 LED_blink(LED2);

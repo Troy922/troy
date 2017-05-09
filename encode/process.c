@@ -1000,7 +1000,7 @@ void outputToDCS(float BL,float Tt,float MI)
 	/*黑龙长度转化*/
     if(1 == BLTFFlag)
     {
-        /* BL = 4.0/125*BL+4.0; */
+        BL = 4.0/125*BL+4.0;
         if(BL < 4)
             BL = 4;
         if(BL > 20)
@@ -1008,7 +1008,7 @@ void outputToDCS(float BL,float Tt,float MI)
     }
     else
     {
-        /* BL = 1.0/25*BL+4.0; */
+        BL = 1.0/25*BL+4.0;
         if(BL < 4)
             BL = 4;
         if(BL > 20)
@@ -1016,13 +1016,13 @@ void outputToDCS(float BL,float Tt,float MI)
     }
 
 	/*扩散角*/
-    /* Tt = 8.0/45*Tt+4; */
+    Tt = 8.0/45*Tt+4;
     if(Tt < 4)
         Tt = 4;
     if(Tt > 20)
         Tt = 20;
 	/*混合强度*/
-    /* MI = 0.16*MI + 4; */
+    MI = 0.16*MI + 4;
     if(MI < 4)
         MI = 4;
     if(MI > 20)

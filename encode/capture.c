@@ -452,6 +452,8 @@ Void *captureThrFxn(Void *arg)
         }
         /* Increment statistics for the user interface */
         gblIncFrames();
+
+        /*suspend thread while outputing analog signal to dcs.*/
         pthread_mutex_lock(&mutex_dcs);
         while(status_thread == THREAD_STOP){
             pthread_cond_wait(&cond_capture,&mutex_dcs);

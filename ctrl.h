@@ -68,11 +68,12 @@
 
 #define THREAD_RUN                  1
 #define THREAD_STOP                 0
-
+/*parameters for threads suspending*/
 extern pthread_mutex_t mutex_dcs;
 extern pthread_cond_t cond_video;
 extern pthread_cond_t cond_capture;
 extern int status_thread;
+
 extern Char LED[8];
 extern Int gpio_total;
 extern Bool gpio_flag;
